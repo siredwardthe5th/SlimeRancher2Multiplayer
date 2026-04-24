@@ -20,7 +20,13 @@ public sealed class ActorDestroyHandler : BasePacketHandler<ActorDestroyPacket>
         }
 
         SceneContext.Instance.GameModel.identifiables.Remove(packet.ActorId);
-        SceneContext.Instance.GameModel.identifiablesByIdent[actor.ident].Remove(actor);
+
+        // FIX: identifiablesByIdent may not contain this ident if the actor was loaded from a zone
+        // that the server hadn't registered yet (e.g. ContainerGorgeGold01, ContainerStrandGold01).
+        // Use TryGetValue instead of direct indexer to avoid KeyNotFoundException.
+        if (SceneContext.Instance.GameModel.identifiablesByIdent.TryGetValue(actor.ident, out var identList))
+            identList.Remove(actor);
+
         SceneContext.Instance.GameModel.DestroyIdentifiableModel(actor);
 
         var obj = actor.GetGameObject();

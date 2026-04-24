@@ -5,7 +5,7 @@ using SR2MP.Packets.World;
 
 namespace SR2MP.Patches.World;
 
-[HarmonyPatch(typeof(AccessDoorUIRoot), nameof(AccessDoorUIRoot.UnlockDoor))]
+[HarmonyPatch(typeof(AccessDoorUIRoot), "UnlockDoor")]
 public static class OnAccessDoorUnlock
 {
     public static void Postfix(AccessDoorUIRoot __instance)

@@ -20,6 +20,15 @@ public sealed class GordoFeedHandler : BasePacketHandler<GordoFeedPacket>
         }
         else
         {
+            // FIX: Guard against unknown gordo types instead of throwing KeyNotFoundException
+            // from actorManager.ActorTypes[packet.GordoType].
+            if (!actorManager.ActorTypes.TryGetValue(packet.GordoType, out var gordoType))
+            {
+                SrLogger.LogWarning($"GordoFeed: unknown gordo type {packet.GordoType}", SrLogTarget.Both);
+                Main.Server.SendToAllExcept(packet, clientEp);
+                return;
+            }
+
             gordo = new GordoModel
             {
                 fashions = new CppCollections.List<IdentifiableType>(0),
@@ -27,7 +36,7 @@ public sealed class GordoFeedHandler : BasePacketHandler<GordoFeedPacket>
                 gordoSeen = false,
                 gameObj = null,
                 targetCount = packet.RequiredFoodCount,
-                identifiableType = actorManager.ActorTypes[packet.GordoType]
+                identifiableType = gordoType
             };
 
             SceneContext.Instance.GameModel.gordos.Add(packet.ID, gordo);

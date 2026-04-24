@@ -194,7 +194,7 @@ public sealed class NetworkActorManager
         const int Max = 12;
 
         var player = SceneContext.Instance.player;
-       
+
         var bounds = new Bounds(player.transform.position, new Vector3(325, 1000, 325));
 
         int i = 0;
@@ -202,11 +202,17 @@ public sealed class NetworkActorManager
         {
             if (actor.Value == null)
                 continue;
-            
+
             if (!bounds.Contains(actor.Value.lastPosition))
                 continue;
 
-            if (actor.Value.TryGetNetworkComponent(out var netActor))
+            // FIX: The original condition was missing '!' — it was skipping actors that HAVE a
+            // NetworkActor component (the ones we actually want to take ownership of) and then
+            // calling netActor.LocallyOwned on a null reference when no component was found.
+            if (!actor.Value.TryGetNetworkComponent(out var netActor))
+                continue;
+
+            if (netActor.LocallyOwned)
                 continue;
 
             netActor.LocallyOwned = true;
