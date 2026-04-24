@@ -39,6 +39,6 @@ public static class OnResourceAttach
             Model = spawner._model,
         };
 
-        // Main.SendToAllOrServer(packet);
+        Main.SendToAllOrServer(packet);
     }
 }

@@ -29,6 +29,10 @@ public sealed class InitialMapLoadHandler : BaseClientPacketHandler<InitialMapPa
                 updatedRealTime = 0,
                 updatedGameTime = 0,
             };
+
+            var gameEvent = Resources.FindObjectsOfTypeAll<StaticGameEvent>().FirstOrDefault(x => x._dataKey == node);
+            if (gameEvent != null)
+                SceneContext.Instance.MapDirector.NotifyZoneUnlocked(gameEvent, false, 0);
         }
     }
 }

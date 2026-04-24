@@ -50,6 +50,8 @@ public enum PacketType : byte
     WeatherUpdate = 45,           // Server -> All Clients                                                              On Weather Update
     InitialWeather = 46,          // Server -> Client                                                                   Weather on Load
     LightningStrike = 47,         // Both Ways                                                                          On Lightning Strike
+    DecorizerUpdate = 48,         // Both Ways                                                                          On Decoration Added/Removed
+    InitialDecorizer = 49,        // Server -> Client                                                                   Decorations on Load
     ReservedAck = 254,
     ReservedDoNotUse = 255,
 }
