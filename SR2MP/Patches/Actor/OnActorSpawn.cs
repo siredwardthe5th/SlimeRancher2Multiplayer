@@ -52,4 +52,10 @@ public static class OnActorSpawn
 
         MelonCoroutines.Start(SpawnOverNetwork(actorType, (byte)sceneGroupId, __result));
     }
+
+    public static Exception Finalizer(Exception __exception)
+    {
+        if (__exception is NullReferenceException) return null;
+        return __exception;
+    }
 }
