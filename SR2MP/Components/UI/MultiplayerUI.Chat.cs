@@ -13,7 +13,6 @@ public sealed partial class MultiplayerUI
     private string chatInput = string.Empty;
     private bool isChatFocused;
     private bool wasChatFocused;
-    private const string ChatInputName = "ChatInput";
 
     private bool shouldUnfocusChat;
     private bool internalChatToggle;
@@ -204,7 +203,7 @@ public sealed partial class MultiplayerUI
 
     private void ProcessFocusRequests()
     {
-        if (shouldFocusChat && Event.current.type == EventType.Repaint)
+        if (shouldFocusChat)
             SetChatFocus(true);
         else if (shouldUnfocusChat)
             SetChatFocus(false);
@@ -212,10 +211,16 @@ public sealed partial class MultiplayerUI
 
     private void SetChatFocus(bool focus)
     {
-        GUI.FocusControl(focus ? ChatInputName : null);
-
-        if (focus) shouldFocusChat = false;
-        else shouldUnfocusChat = false;
+        if (focus)
+        {
+            _focusedField = ChatFieldId;
+            shouldFocusChat = false;
+        }
+        else
+        {
+            if (_focusedField == ChatFieldId) _focusedField = -1;
+            shouldUnfocusChat = false;
+        }
 
         if (focus && !disabledInput)
         {
@@ -231,9 +236,8 @@ public sealed partial class MultiplayerUI
 
     private void UpdateChatFocusState()
     {
-        string currentChatFocus = GUI.GetNameOfFocusedControl();
         bool wasPreviouslyFocused = isChatFocused;
-        isChatFocused = currentChatFocus == ChatInputName;
+        isChatFocused = _focusedField == ChatFieldId;
 
         if (isChatFocused && !wasPreviouslyFocused)
         {
@@ -261,8 +265,7 @@ public sealed partial class MultiplayerUI
 
         float chatY = Screen.height / 2;
 
-        GUI.Box(new Rect(6, chatY, ChatWidth, ChatHeight),
-                "Chat (F5 to toggle)");
+        GUI.Box(new Rect(6, chatY, ChatWidth, ChatHeight), "Chat (F5 to toggle)");
 
         ProcessPendingMessages();
         TrimOldMessages();
@@ -270,36 +273,18 @@ public sealed partial class MultiplayerUI
         previousLayoutChatRect = new Rect(6, chatY + ChatHeaderHeight, ChatWidth, 0);
 
         foreach (var message in chatMessages)
-        {
             RenderChatMessage(message);
-        }
 
-        GUI.SetNextControlName(ChatInputName);
+        ProcessFocusRequests();
 
-        if (string.IsNullOrEmpty(chatInput) && !isChatFocused)
-        {
-            var prevColor = GUI.contentColor;
-            GUI.contentColor = Color.gray;
-            GUI.Label(
-                new Rect(6 + HorizontalSpacing,
-                         chatY + ChatHeight - InputHeight - 5,
-                         ChatWidth - (HorizontalSpacing * 2),
-                         InputHeight),
-                "Press Enter to chat..."
-            );
-            GUI.contentColor = prevColor;
-        }
-
-        chatInput = GUI.TextField(
+        chatInput = TextField(
             new Rect(6 + HorizontalSpacing,
                      chatY + ChatHeight - InputHeight - 5,
                      ChatWidth - (HorizontalSpacing * 2),
                      InputHeight),
-            chatInput,
-            MaxChatMessageLength
+            chatInput, ChatFieldId, MaxChatMessageLength, "Press Enter to chat..."
         );
 
         UpdateChatFocusState();
-        ProcessFocusRequests();
     }
 }

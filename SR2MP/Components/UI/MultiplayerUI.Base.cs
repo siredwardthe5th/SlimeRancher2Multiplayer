@@ -10,6 +10,8 @@ public sealed partial class MultiplayerUI : MonoBehaviour
     public static MultiplayerUI Instance { get; private set; }
 
     private bool didUnfocus = false;
+    private int _focusedField = -1;
+    private const int ChatFieldId = 4;
 
     private void Awake()
     {
@@ -35,8 +37,63 @@ public sealed partial class MultiplayerUI : MonoBehaviour
         Instance = null!;
     }
 
+    private string TextField(Rect rect, string text, int id, int maxLength = -1, string placeholder = null)
+    {
+        var e = Event.current;
+        bool focused = _focusedField == id;
+
+        if (e.type == EventType.MouseDown && rect.Contains(e.mousePosition))
+        {
+            _focusedField = id;
+            e.Use();
+        }
+
+        if (focused && e.type == EventType.KeyDown)
+        {
+            switch (e.keyCode)
+            {
+                case KeyCode.Backspace:
+                    if (text.Length > 0)
+                        text = text[..^1];
+                    e.Use();
+                    break;
+                case KeyCode.Return:
+                case KeyCode.KeypadEnter:
+                case KeyCode.Escape:
+                    if (id != ChatFieldId)
+                        _focusedField = -1;
+                    break;
+                default:
+                    if (e.character != '\0' && e.character != '\n' && !char.IsControl(e.character))
+                    {
+                        if (maxLength < 0 || text.Length < maxLength)
+                            text += e.character;
+                        e.Use();
+                    }
+                    break;
+            }
+        }
+
+        if (placeholder != null && string.IsNullOrEmpty(text) && !focused)
+        {
+            var prevColor = GUI.contentColor;
+            GUI.contentColor = Color.gray;
+            GUI.Label(rect, placeholder, GUI.skin.textField);
+            GUI.contentColor = prevColor;
+        }
+        else
+        {
+            GUI.Label(rect, focused ? text + "|" : text, GUI.skin.textField);
+        }
+
+        return text;
+    }
+
     private void OnGUI()
     {
+        if (Event.current.type == EventType.MouseDown)
+            _focusedField = -1;
+
         if (Event.current.type == EventType.Layout)
         {
             state = GetState();
