@@ -52,6 +52,11 @@ public enum PacketType : byte
     LightningStrike = 47,         // Both Ways                                                                          On Lightning Strike
     DecorizerUpdate = 48,         // Both Ways                                                                          On Decoration Added/Removed
     InitialDecorizer = 49,        // Server -> Client                                                                   Decorations on Load
+    GadgetPlace = 50,             // Both Ways                                                                          On Gadget Placed
+    GadgetRemove = 51,            // Both Ways                                                                          On Gadget Removed
+    InitialGadgets = 52,          // Server -> Client                                                                   Gadgets on Load
+    ResourceNodeUpdate = 53,      // Both Ways                                                                          On Resource Node Spawned/Despawned
+    InitialResourceNodes = 54,    // Server -> Client                                                                   Resource Nodes on Load
     ReservedAck = 254,
     ReservedDoNotUse = 255,
 }

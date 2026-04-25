@@ -55,6 +55,8 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         SendMapPacket(clientEp);
         SendAccessDoorsPacket(clientEp);
         SendDecorizerPacket(clientEp);
+        SendGadgetsPacket(clientEp);
+        SendResourceNodesPacket(clientEp);
         SendPricesPacket(clientEp);
 
         SrLogger.LogMessage($"Player {packet.PlayerId} successfully connected",
@@ -283,6 +285,42 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
 
         var packet = new InitialDecorizerPacket { Contents = contents };
         Main.Server.SendToClient(packet, client);
+    }
+
+    private static void SendGadgetsPacket(IPEndPoint client)
+    {
+        var gadgets = new List<InitialGadgetsPacket.GadgetEntry>();
+        foreach (var model in SceneContext.Instance.GameModel.AllGadgets())
+        {
+            if (model.actorId.Value == 0) continue;
+            gadgets.Add(new InitialGadgetsPacket.GadgetEntry
+            {
+                ActorId = model.actorId.Value,
+                TypeId = NetworkActorManager.GetPersistentID(model.ident),
+                Position = model.GetPos(),
+                EulerRotation = model.eulerRotation,
+                SceneGroupId = NetworkSceneManager.GetPersistentID(model.sceneGroup)
+            });
+        }
+        Main.Server.SendToClient(new InitialGadgetsPacket { Gadgets = gadgets }, client);
+    }
+
+    private static void SendResourceNodesPacket(IPEndPoint client)
+    {
+        var nodes = new List<InitialResourceNodesPacket.NodeEntry>();
+        foreach (var kvp in SceneContext.Instance.GameModel.resourceNodeSpawnerModels)
+        {
+            var model = kvp.value;
+            var isActive = model.nodeState == ResourceNode.NodeState.READY ||
+                           model.nodeState == ResourceNode.NodeState.HARVESTING;
+            nodes.Add(new InitialResourceNodesPacket.NodeEntry
+            {
+                SpawnerId = model.nodeId,
+                VariantIndex = model.resourceNodeVariantIndex,
+                IsSpawned = isActive
+            });
+        }
+        Main.Server.SendToClient(new InitialResourceNodesPacket { Nodes = nodes }, client);
     }
 
     private static void SendPricesPacket(IPEndPoint client)
