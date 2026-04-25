@@ -6,10 +6,6 @@
 # Libraries
 libraries/
 
-# DllInspect tool build artifacts (source is committed, binaries are not)
-tools/DllInspect/bin/
-tools/DllInspect/obj/
-
 # Rider stuff (probably duplicate but making sure)
 .idea/
 bin/

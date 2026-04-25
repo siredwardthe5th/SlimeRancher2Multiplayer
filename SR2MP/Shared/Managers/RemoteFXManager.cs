@@ -46,6 +46,7 @@ public sealed class RemoteFXManager
         foreach (var particle in resources)
         {
             var particleName = particle.gameObject.name.Replace(' ', '_');
+
             AllFX.TryAdd(particleName, particle.gameObject);
         }
         AllCues.Clear();
@@ -65,9 +66,7 @@ public sealed class RemoteFXManager
             { PlayerFXType.None, null! },
             { PlayerFXType.VacReject, AllFX["FX_vacReject"] },
             { PlayerFXType.VacAccept, AllFX["FX_vacAcquire"] },
-            { PlayerFXType.VacShoot, AllFX["FX_VacpackShoot"] },
-            { PlayerFXType.WaterSplash, AllFX.TryGetValue("FX_WaterSplash", out var waterSplashFX) ? waterSplashFX : null! },
-            { PlayerFXType.WalkTrail, AllFX.TryGetValue("FX_walkTrail", out var walkTrailFX) ? walkTrailFX : null! },
+            { PlayerFXType.VacShoot, AllFX["FX_VacpackShoot"] }
         };
         PlayerAudioCueMap = new Dictionary<PlayerFXType, SECTR_AudioCue>
         {
@@ -84,10 +83,8 @@ public sealed class RemoteFXManager
         {
             { WorldFXType.None, null! },
             { WorldFXType.SellPlort, SellFX ?? AllFX["FX_Stars"] },
-            // FX_slimeEatFav and FX_gordoEat are live child particles on specific slimes, not prefabs.
-            // Passing them to FXHelpers.SpawnAndPlayFX corrupts the object pool and breaks all subsequent eating.
-            { WorldFXType.FavoriteFoodEaten, null! },
-            { WorldFXType.GordoFoodEaten, null! },
+            { WorldFXType.FavoriteFoodEaten, AllFX["FX_slimeEatFav"] },
+            { WorldFXType.GordoFoodEaten, AllFX["FX_Gordo_Eat"] },
         };
         WorldAudioCueMap = new Dictionary<WorldFXType, SECTR_AudioCue>
         {
@@ -107,15 +104,13 @@ public sealed class RemoteFXManager
             if (!obj)
                 continue;
 
-            // WaterSplash is sent by the OnWaterTouchStart patch (which has a PlayerState guard).
-            // Adding NetworkPlayerFX here would also fire for slimes entering water, causing spurious packets.
-            if (playerFX == PlayerFXType.WaterSplash)
-                continue;
-
-            // Add to obj itself only — not to every child particle.
-            // GetComponentsInChildren would attach one component per sub-particle, firing N packets per event.
-            if (!obj.GetComponent<NetworkPlayerFX>())
-                obj.AddComponent<NetworkPlayerFX>().fxType = playerFX;
+            // Please Az find a better way :sob:
+            // Made slight improvements - Az
+            foreach (var particle in resources.Where(x => x.name.Contains(obj.name)))
+            {
+                if (!particle.GetComponent<NetworkPlayerFX>())
+                    particle.AddComponent<NetworkPlayerFX>().fxType = playerFX;
+            }
         }
 
         foreach (var (worldFX, obj) in WorldFXMap)
@@ -123,12 +118,11 @@ public sealed class RemoteFXManager
             if (!obj)
                 continue;
 
-            // Skip types whose map entries are intentionally null (no prefab available).
-            if (worldFX is WorldFXType.FavoriteFoodEaten or WorldFXType.GordoFoodEaten)
-                continue;
-
-            if (!obj.GetComponent<NetworkWorldFX>())
-                obj.AddComponent<NetworkWorldFX>().fxType = worldFX;
+            foreach (var particle in resources.Where(x => x.name.Contains(obj.name)))
+            {
+                if (!particle.GetComponent<NetworkWorldFX>())
+                    particle.AddComponent<NetworkWorldFX>().fxType = worldFX;
+            }
         }
 
         FootstepFX = AllFX["FX_Footstep"];

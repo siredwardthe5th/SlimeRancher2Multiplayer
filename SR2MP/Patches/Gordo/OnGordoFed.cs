@@ -1,4 +1,5 @@
 using HarmonyLib;
+using SR2MP.Packets.FX;
 using SR2MP.Packets.Gordo;
 using SR2MP.Shared.Managers;
 
@@ -17,5 +18,12 @@ public static class OnGordoFed
             GordoType = NetworkActorManager.GetPersistentID(__instance.GordoModel.identifiableType)
         };
         Main.SendToAllOrServer(packet);
+
+        var soundPacket = new WorldFXPacket
+        {
+            Position = __instance.transform.position,
+            FX = WorldFXType.GordoFoodEatenSound
+        };
+        Main.SendToAllOrServer(soundPacket);
     }
 }

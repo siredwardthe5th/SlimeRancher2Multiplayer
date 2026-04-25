@@ -13,12 +13,7 @@ public sealed class LandPlotUpdateHandler : BasePacketHandler<LandPlotUpdatePack
 
     protected override void Handle(LandPlotUpdatePacket packet, IPEndPoint clientEp)
     {
-        // FIX: Guard against unknown plot IDs instead of throwing KeyNotFoundException.
-        if (!SceneContext.Instance.GameModel.landPlots.TryGetValue(packet.ID, out var model))
-        {
-            SrLogger.LogWarning($"LandPlotUpdate: plot {packet.ID} not found in game model", SrLogTarget.Both);
-            return;
-        }
+        var model = SceneContext.Instance.GameModel.landPlots[packet.ID];
 
         Main.Server.SendToAllExcept(packet, clientEp);
 

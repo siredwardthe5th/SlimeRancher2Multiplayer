@@ -10,23 +10,6 @@ public sealed class PlotsLoadHandler : BaseClientPacketHandler<InitialLandPlotsP
     public PlotsLoadHandler(Client client, RemotePlayerManager playerManager)
         : base(client, playerManager) { }
 
-    private static void ApplySlotEntries(SiloStorage? storage, List<InitialLandPlotsPacket.SiloData.SlotEntry> entries)
-    {
-        if (!storage || entries == null) return;
-        var ammo = storage.GetRelevantAmmo();
-        if (ammo == null) return;
-        handlingPacket = true;
-        foreach (var entry in entries)
-        {
-            if (entry.SlotIndex < 0 || entry.SlotIndex >= ammo.Slots.Count) continue;
-            var identType = actorManager.ActorTypes[entry.ActorTypeId];
-            if (!identType) continue;
-            ammo.Clear(entry.SlotIndex);
-            ammo.MaybeAddResource(identType, entry.SlotIndex, entry.Count, false);
-        }
-        handlingPacket = false;
-    }
-
     protected override void Handle(InitialLandPlotsPacket packet)
     {
         foreach (var plot in packet.Plots)
@@ -75,19 +58,7 @@ public sealed class PlotsLoadHandler : BaseClientPacketHandler<InitialLandPlotsP
                         gardenCatcher.Plant(actor, true);
                     break;
                 }
-                case InitialLandPlotsPacket.SiloData silo:
-                {
-                    if (!model.gameObj) break;
-                    ApplySlotEntries(model.gameObj.GetComponentInChildren<SiloStorage>(), silo.Slots);
-                    break;
-                }
-                case InitialLandPlotsPacket.CorralData corral:
-                {
-                    if (!model.gameObj) break;
-                    ApplySlotEntries(model.gameObj.GetComponentInChildren<PlortCollector>()?._storage, corral.PlortSlots);
-                    ApplySlotEntries(model.gameObj.GetComponentInChildren<SlimeFeeder>()?._storage, corral.FeederSlots);
-                    break;
-                }
+                case InitialLandPlotsPacket.SiloData silo: break; // todo
             }
         }
     }

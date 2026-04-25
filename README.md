@@ -2,7 +2,6 @@
 
 **LEGEND:**
 - 🟩 fully synced
-- 🟦 needs testing (newly implemented, not yet verified in-game)
 - 🟨 partially synced
 - 🟧 in progress
 - 🟥 not synced
@@ -11,29 +10,29 @@
 |:-----------------:|:------:|:-----------------------------------------------------------------------------:|
 |  Player Movement  |   🟩   |                               Fully functional                                |
 | Player Animations |   🟩   |                               Fully functional                                |
-|  Player Sound FX  |   🟦   |                               Fully functional                                |
-| Player Visual FX  |   🟦   |          Water splash wired; walk trail needs to be tested                    |
-| Player Inventory  |   🟦   |                               Fully functional                                |
+|  Player Sound FX  |   🟨   |                             Water splash missing                              |
+| Player Visual FX  |   🟨   |               Water splash particle + Vac suction trail missing               |
+| Player Inventory  |   🟥   |                                Not implemented                                |
 | Initial Save load |   🟩   | Everything that is ___currently___ synchronised will be loaded on Player join |
 |  Map Expansions   |   🟩   |                               Fully functional                                |
 |      Slimes       |   🟩   |                               Fully functional                                |
 |  Actors (Items)   |   🟩   |                               Fully functional                                |
-|     Landplots     |   🟦   |                               Fully functional                                |
+|     Landplots     |   🟨   |  Gardens (🟧), Silos, Plort collectors & Auto-feeders missing functionality   |
 | Landplot upgrades |   🟩   |                               Fully functional                                |
 |    Slimepedia     |   🟩   |                               Fully functional                                |
-|      Gadgets      |   🟦   |                               Fully functional                                |
+|      Gadgets      |   🟥   |                                Not implemented                                |
 |     Upgrades      |   🟩   |                               Fully functional                                |
 |       Money       |   🟩   |                               Fully functional                                |
 |       Time        |   🟩   |                               Fully functional                                |
-|    Decorations    |   🟦   |                               Fully functional                                |
-|  Gray Labyrinth   |   🟦   |                               Fully functional                                |
+|    Decorations    |   🟥   |                                Not implemented                                |
+|  Gray Labyrinth   |   🟨   |                            Switches are functional                            |
 |   Market Prices   |   🟩   |             Fully functional (Including price change indicators)              |
 |      Plot FX      |   🟩   |                               Fully functional                                |
 |     Market FX     |   🟩   |                               Fully functional                                |
-|  Resource Nodes   |   🟦   |                               Fully functional                                |
+|  Resource Nodes   |   🟥   |                                Not implemented                                |
 |   Gordo Slimes    |   🟩   |                               Fully functional                                |
 |      Geysers      |   🟩   |                               Fully functional                                |
-|        Map        |   🟦   |                               Fully functional                                |
+|        Map        |   🟨   |     Lightning has duplicate loot, Tornados and map icons not synchronised     |
 |    Teleporters    |   🟩   |                               Fully functional                                |
 |      Weather      |   🟩   |                               Fully functional                                |
 |     Lightning     |   🟩   |                               Fully functional                                |

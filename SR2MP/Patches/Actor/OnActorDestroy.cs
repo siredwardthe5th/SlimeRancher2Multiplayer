@@ -8,23 +8,16 @@ public static class OnActorDestroy
 {
     public static bool Prefix(GameObject actorObj, string source)
     {
-        try
-        {
-            if (SystemContext.Instance.SceneLoader.IsSceneLoadInProgress) return true;
-        }
-        catch
-        {
-            return true;
-        }
+        if (SystemContext.Instance.SceneLoader.IsSceneLoadInProgress) return true;
 
         try
         {
             if (Main.Server.IsRunning() || Main.Client.IsConnected)
             {
-                SrLogger.LogMessage($"[SR2MP] DestroyActor: source='{source}' obj='{actorObj?.name}'");
-
-                if (source == "SlimeFeral.Awake")
+                if (source is "ResourceCycle.RegistryUpdate#1" or "SlimeFeral.Awake")
+                {
                     return false;
+                }
             }
         }
         catch { }
@@ -32,13 +25,13 @@ public static class OnActorDestroy
         if ((!Main.Server.IsRunning() && !Main.Client.IsConnected) || handlingPacket || !actorObj)
             return true;
 
+        var actor = actorObj.GetComponent<IdentifiableActor>();
+        if (!actor)
+            return true;
+
+        actorManager.Actors.Remove(actor.GetActorId().Value);
         try
         {
-            var actor = actorObj.GetComponent<IdentifiableActor>();
-            if (!actor) return true;
-
-            actorManager.Actors.Remove(actor.GetActorId().Value);
-
             var packet = new ActorDestroyPacket { ActorId = actor.GetActorId() };
             Main.SendToAllOrServer(packet);
         }

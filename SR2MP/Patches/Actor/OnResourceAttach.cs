@@ -13,7 +13,6 @@ public static class OnResourceAttach
         if (joint.connectedBody)
         {
             var other = joint.connectedBody.GetComponent<ResourceCycle>();
-            if (!other) return; // connected body is a slime/chomper, not a resource — let it through
 
             SceneContext.Instance.GameModel.identifiables.Remove(other._model.actorId);
             SceneContext.Instance.GameModel.identifiablesByIdent[other._model.ident].Remove(other._model);
@@ -40,6 +39,6 @@ public static class OnResourceAttach
             Model = spawner._model,
         };
 
-        Main.SendToAllOrServer(packet);
+        // Main.SendToAllOrServer(packet);
     }
 }

@@ -8,9 +8,8 @@ public sealed class InitialLandPlotsPacket : IPacket
     {
         private static readonly Dictionary<LandPlot.Id, Type> DataTypes = new()
         {
-            { LandPlot.Id.GARDEN,  typeof(GardenData)  },
-            { LandPlot.Id.SILO,    typeof(SiloData)    },
-            { LandPlot.Id.CORRAL,  typeof(CorralData)  },
+            { LandPlot.Id.GARDEN, typeof(GardenData) },
+            { LandPlot.Id.SILO,   typeof(SiloData)   }
         };
 
         public string ID { get; set; }
@@ -53,52 +52,9 @@ public sealed class InitialLandPlotsPacket : IPacket
 
     public struct SiloData : INetObject
     {
-        public struct SlotEntry : INetObject
-        {
-            public int SlotIndex { get; set; }
-            public int ActorTypeId { get; set; }
-            public int Count { get; set; }
-
-            public readonly void Serialise(PacketWriter writer)
-            {
-                writer.WriteInt(SlotIndex);
-                writer.WriteInt(ActorTypeId);
-                writer.WriteInt(Count);
-            }
-
-            public void Deserialise(PacketReader reader)
-            {
-                SlotIndex = reader.ReadInt();
-                ActorTypeId = reader.ReadInt();
-                Count = reader.ReadInt();
-            }
-        }
-
-        public List<SlotEntry> Slots { get; set; }
-
-        public readonly void Serialise(PacketWriter writer)
-            => writer.WriteList(Slots, PacketWriterDels.NetObject<SlotEntry>.Func);
-
-        public void Deserialise(PacketReader reader)
-            => Slots = reader.ReadList(PacketReaderDels.NetObject<SlotEntry>.Func);
-    }
-
-    public struct CorralData : INetObject
-    {
-        public List<SiloData.SlotEntry> PlortSlots { get; set; }
-        public List<SiloData.SlotEntry> FeederSlots { get; set; }
-
-        public readonly void Serialise(PacketWriter writer)
-        {
-            writer.WriteList(PlortSlots, PacketWriterDels.NetObject<SiloData.SlotEntry>.Func);
-            writer.WriteList(FeederSlots, PacketWriterDels.NetObject<SiloData.SlotEntry>.Func);
-        }
-
-        public void Deserialise(PacketReader reader)
-        {
-            PlortSlots = reader.ReadList(PacketReaderDels.NetObject<SiloData.SlotEntry>.Func);
-            FeederSlots = reader.ReadList(PacketReaderDels.NetObject<SiloData.SlotEntry>.Func);
-        }
+        // todo
+        public readonly void Serialise(PacketWriter writer) { }
+        public void Deserialise(PacketReader reader) { }
     }
 
     public List<BasePlot> Plots { get; set; }

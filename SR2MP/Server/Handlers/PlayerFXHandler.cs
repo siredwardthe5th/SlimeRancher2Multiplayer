@@ -16,12 +16,11 @@ public sealed class PlayerFXHandler : BasePacketHandler<PlayerFXPacket>
     {
         if (!IsPlayerSoundDictionary[packet.FX])
         {
-            if (fxManager.PlayerFXMap.TryGetValue(packet.FX, out var fxPrefab) && fxPrefab)
-            {
-                handlingPacket = true;
-                FXHelpers.SpawnAndPlayFX(fxPrefab, packet.Position, Quaternion.identity);
-                handlingPacket = false;
-            }
+            var fxPrefab = fxManager.PlayerFXMap[packet.FX];
+
+            handlingPacket = true;
+            FXHelpers.SpawnAndPlayFX(fxPrefab, packet.Position, Quaternion.identity);
+            handlingPacket = false;
         }
         else
         {

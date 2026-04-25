@@ -54,9 +54,6 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         SendPediaPacket(clientEp);
         SendMapPacket(clientEp);
         SendAccessDoorsPacket(clientEp);
-        SendDecorizerPacket(clientEp);
-        SendGadgetsPacket(clientEp);
-        SendResourceNodesPacket(clientEp);
         SendPricesPacket(clientEp);
 
         SrLogger.LogMessage($"Player {packet.PlayerId} successfully connected",
@@ -127,13 +124,9 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         foreach (var map in maps)
             mapsList.Add(map.Key);
 
-        var navData = SceneContext.Instance.MapDirector.NavigationMarkerData;
         var mapPacket = new InitialMapPacket
         {
-            UnlockedNodes = mapsList,
-            HasNavMarker = navData.IsMapMarkerActive,
-            NavMarkerPosition = navData.IsMapMarkerActive ? navData.MapPosition : Vector3.zero,
-            NavMarkerMapName = navData.IsMapMarkerActive ? navData.PlacedOnMap?.name ?? string.Empty : string.Empty
+            UnlockedNodes = mapsList
         };
 
         Main.Server.SendToClient(mapPacket, client);
@@ -254,8 +247,8 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
                 {
                     Crop = plot.resourceGrowerDefinition == null ? 9 : NetworkActorManager.GetPersistentID(plot.resourceGrowerDefinition?._primaryResourceType!)
                 },
-                LandPlot.Id.SILO   => BuildSiloData(plot.gameObj),
-                LandPlot.Id.CORRAL => BuildCorralData(plot.gameObj),
+                LandPlot.Id.SILO => new InitialLandPlotsPacket.SiloData
+                    {},
                 _ => null
             };
 
@@ -274,97 +267,6 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         };
 
         Main.Server.SendToClient(plotsPacket, client);
-    }
-
-    private static List<InitialLandPlotsPacket.SiloData.SlotEntry> BuildSlotEntries(SiloStorage? storage)
-    {
-        var entries = new List<InitialLandPlotsPacket.SiloData.SlotEntry>();
-        if (!storage) return entries;
-        var ammo = storage.GetRelevantAmmo();
-        if (ammo == null) return entries;
-        int i = 0;
-        foreach (var slot in ammo.Slots)
-        {
-            if (slot?.Id != null && slot.Count > 0)
-                entries.Add(new InitialLandPlotsPacket.SiloData.SlotEntry
-                {
-                    SlotIndex = i,
-                    ActorTypeId = NetworkActorManager.GetPersistentID(slot.Id),
-                    Count = slot.Count
-                });
-            i++;
-        }
-        return entries;
-    }
-
-    private static InitialLandPlotsPacket.SiloData BuildSiloData(GameObject? gameObj)
-    {
-        if (!gameObj) return new InitialLandPlotsPacket.SiloData { Slots = new() };
-        return new InitialLandPlotsPacket.SiloData
-        {
-            Slots = BuildSlotEntries(gameObj.GetComponentInChildren<SiloStorage>())
-        };
-    }
-
-    private static InitialLandPlotsPacket.CorralData BuildCorralData(GameObject? gameObj)
-    {
-        if (!gameObj) return new InitialLandPlotsPacket.CorralData { PlortSlots = new(), FeederSlots = new() };
-        return new InitialLandPlotsPacket.CorralData
-        {
-            PlortSlots = BuildSlotEntries(gameObj.GetComponentInChildren<PlortCollector>()?._storage),
-            FeederSlots = BuildSlotEntries(gameObj.GetComponentInChildren<SlimeFeeder>()?._storage)
-        };
-    }
-
-    private static void SendDecorizerPacket(IPEndPoint client)
-    {
-        var model = SceneContext.Instance.GameModel.GetDecorizerModel();
-        var contents = new Dictionary<int, int>();
-
-        foreach (var kvp in model.contents._dictionary)
-        {
-            if (kvp.value > 0)
-                contents[NetworkActorManager.GetPersistentID(kvp.key)] = kvp.value;
-        }
-
-        var packet = new InitialDecorizerPacket { Contents = contents };
-        Main.Server.SendToClient(packet, client);
-    }
-
-    private static void SendGadgetsPacket(IPEndPoint client)
-    {
-        var gadgets = new List<InitialGadgetsPacket.GadgetEntry>();
-        foreach (var model in SceneContext.Instance.GameModel.AllGadgets())
-        {
-            if (model.actorId.Value == 0) continue;
-            gadgets.Add(new InitialGadgetsPacket.GadgetEntry
-            {
-                ActorId = model.actorId.Value,
-                TypeId = NetworkActorManager.GetPersistentID(model.ident),
-                Position = model.GetPos(),
-                EulerRotation = model.eulerRotation,
-                SceneGroupId = NetworkSceneManager.GetPersistentID(model.sceneGroup)
-            });
-        }
-        Main.Server.SendToClient(new InitialGadgetsPacket { Gadgets = gadgets }, client);
-    }
-
-    private static void SendResourceNodesPacket(IPEndPoint client)
-    {
-        var nodes = new List<InitialResourceNodesPacket.NodeEntry>();
-        foreach (var kvp in SceneContext.Instance.GameModel.resourceNodeSpawnerModels)
-        {
-            var model = kvp.value;
-            var isActive = model.nodeState == ResourceNode.NodeState.READY ||
-                           model.nodeState == ResourceNode.NodeState.HARVESTING;
-            nodes.Add(new InitialResourceNodesPacket.NodeEntry
-            {
-                SpawnerId = model.nodeId,
-                VariantIndex = model.resourceNodeVariantIndex,
-                IsSpawned = isActive
-            });
-        }
-        Main.Server.SendToClient(new InitialResourceNodesPacket { Nodes = nodes }, client);
     }
 
     private static void SendPricesPacket(IPEndPoint client)
