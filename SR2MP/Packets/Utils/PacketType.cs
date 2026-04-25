@@ -57,6 +57,9 @@ public enum PacketType : byte
     InitialGadgets = 52,          // Server -> Client                                                                   Gadgets on Load
     ResourceNodeUpdate = 53,      // Both Ways                                                                          On Resource Node Spawned/Despawned
     InitialResourceNodes = 54,    // Server -> Client                                                                   Resource Nodes on Load
+    PlayerInventory = 55,         // Both Ways                                                                          On Player Inventory Update
+    TornadoSpawn = 56,            // Server -> All Clients                                                              On Tornado Spawned
+    NavigationMarker = 57,        // Both Ways                                                                          On Navigation Marker Set/Cleared
     ReservedAck = 254,
     ReservedDoNotUse = 255,
 }

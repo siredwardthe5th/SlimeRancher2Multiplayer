@@ -1,3 +1,5 @@
+using SR2MP.Packets.Player;
+
 namespace SR2MP.Client.Models;
 
 public sealed class RemotePlayer
@@ -20,6 +22,8 @@ public sealed class RemotePlayer
 
     public float LookY { get; set; }
     public float LastLookY { get; set; }
+
+    public PlayerInventoryPacket.SlotData[]? Inventory { get; set; }
 
     public RemotePlayer(string playerId) => PlayerId = playerId;
 }

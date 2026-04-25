@@ -14,7 +14,9 @@ public sealed class LightningStrikeHandler : BasePacketHandler<LightningStrikePa
 
     protected override void Handle(LightningStrikePacket packet, IPEndPoint clientEp)
     {
+        handlingPacket = true;
         var lightning = Object.Instantiate(NetworkWeatherManager.Lightning.gameObject);
+        handlingPacket = false;
         lightning.name += " (Net)";
         lightning.transform.position = packet.Position;
 

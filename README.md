@@ -13,12 +13,12 @@
 | Player Animations |   🟩   |                               Fully functional                                |
 |  Player Sound FX  |   🟦   |                               Fully functional                                |
 | Player Visual FX  |   🟦   |          Water splash wired; walk trail needs to be tested                    |
-| Player Inventory  |   🟨   |                  Periodic sync implemented; plort collector & auto-feeder missing                  |
+| Player Inventory  |   🟦   |                               Fully functional                                |
 | Initial Save load |   🟩   | Everything that is ___currently___ synchronised will be loaded on Player join |
 |  Map Expansions   |   🟩   |                               Fully functional                                |
 |      Slimes       |   🟩   |                               Fully functional                                |
 |  Actors (Items)   |   🟩   |                               Fully functional                                |
-|     Landplots     |   🟨   |        Silo contents synced on join; Plort collectors & Auto-feeders missing           |
+|     Landplots     |   🟦   |                               Fully functional                                |
 | Landplot upgrades |   🟩   |                               Fully functional                                |
 |    Slimepedia     |   🟩   |                               Fully functional                                |
 |      Gadgets      |   🟦   |                               Fully functional                                |
@@ -26,14 +26,14 @@
 |       Money       |   🟩   |                               Fully functional                                |
 |       Time        |   🟩   |                               Fully functional                                |
 |    Decorations    |   🟦   |                               Fully functional                                |
-|  Gray Labyrinth   |   🟨   |                            Switches are functional                            |
+|  Gray Labyrinth   |   🟦   |                               Fully functional                                |
 |   Market Prices   |   🟩   |             Fully functional (Including price change indicators)              |
 |      Plot FX      |   🟩   |                               Fully functional                                |
 |     Market FX     |   🟩   |                               Fully functional                                |
 |  Resource Nodes   |   🟦   |                               Fully functional                                |
 |   Gordo Slimes    |   🟩   |                               Fully functional                                |
 |      Geysers      |   🟩   |                               Fully functional                                |
-|        Map        |   🟨   |          Lightning duplicate loot fixed; map icons unfinished; Tornados not synced          |
+|        Map        |   🟦   |                               Fully functional                                |
 |    Teleporters    |   🟩   |                               Fully functional                                |
 |      Weather      |   🟩   |                               Fully functional                                |
 |     Lightning     |   🟩   |                               Fully functional                                |

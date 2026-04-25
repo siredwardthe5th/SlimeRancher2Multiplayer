@@ -127,9 +127,13 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         foreach (var map in maps)
             mapsList.Add(map.Key);
 
+        var navData = SceneContext.Instance.MapDirector.NavigationMarkerData;
         var mapPacket = new InitialMapPacket
         {
-            UnlockedNodes = mapsList
+            UnlockedNodes = mapsList,
+            HasNavMarker = navData.IsMapMarkerActive,
+            NavMarkerPosition = navData.IsMapMarkerActive ? navData.MapPosition : Vector3.zero,
+            NavMarkerMapName = navData.IsMapMarkerActive ? navData.PlacedOnMap?.name ?? string.Empty : string.Empty
         };
 
         Main.Server.SendToClient(mapPacket, client);
@@ -250,8 +254,8 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
                 {
                     Crop = plot.resourceGrowerDefinition == null ? 9 : NetworkActorManager.GetPersistentID(plot.resourceGrowerDefinition?._primaryResourceType!)
                 },
-                LandPlot.Id.SILO => new InitialLandPlotsPacket.SiloData
-                    {},
+                LandPlot.Id.SILO   => BuildSiloData(plot.gameObj),
+                LandPlot.Id.CORRAL => BuildCorralData(plot.gameObj),
                 _ => null
             };
 
@@ -270,6 +274,46 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         };
 
         Main.Server.SendToClient(plotsPacket, client);
+    }
+
+    private static List<InitialLandPlotsPacket.SiloData.SlotEntry> BuildSlotEntries(SiloStorage? storage)
+    {
+        var entries = new List<InitialLandPlotsPacket.SiloData.SlotEntry>();
+        if (!storage) return entries;
+        var ammo = storage.GetRelevantAmmo();
+        if (ammo == null) return entries;
+        int i = 0;
+        foreach (var slot in ammo.Slots)
+        {
+            if (slot?.Id != null && slot.Count > 0)
+                entries.Add(new InitialLandPlotsPacket.SiloData.SlotEntry
+                {
+                    SlotIndex = i,
+                    ActorTypeId = NetworkActorManager.GetPersistentID(slot.Id),
+                    Count = slot.Count
+                });
+            i++;
+        }
+        return entries;
+    }
+
+    private static InitialLandPlotsPacket.SiloData BuildSiloData(GameObject? gameObj)
+    {
+        if (!gameObj) return new InitialLandPlotsPacket.SiloData { Slots = new() };
+        return new InitialLandPlotsPacket.SiloData
+        {
+            Slots = BuildSlotEntries(gameObj.GetComponentInChildren<SiloStorage>())
+        };
+    }
+
+    private static InitialLandPlotsPacket.CorralData BuildCorralData(GameObject? gameObj)
+    {
+        if (!gameObj) return new InitialLandPlotsPacket.CorralData { PlortSlots = new(), FeederSlots = new() };
+        return new InitialLandPlotsPacket.CorralData
+        {
+            PlortSlots = BuildSlotEntries(gameObj.GetComponentInChildren<PlortCollector>()?._storage),
+            FeederSlots = BuildSlotEntries(gameObj.GetComponentInChildren<SlimeFeeder>()?._storage)
+        };
     }
 
     private static void SendDecorizerPacket(IPEndPoint client)

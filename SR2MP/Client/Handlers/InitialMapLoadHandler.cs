@@ -1,4 +1,5 @@
 using Il2CppMonomiPark.SlimeRancher.Event;
+using Il2CppMonomiPark.SlimeRancher.Map;
 using SR2MP.Packets.Loading;
 using SR2MP.Packets.Utils;
 using SR2MP.Shared.Managers;
@@ -33,6 +34,21 @@ public sealed class InitialMapLoadHandler : BaseClientPacketHandler<InitialMapPa
             var gameEvent = Resources.FindObjectsOfTypeAll<StaticGameEvent>().FirstOrDefault(x => x._dataKey == node);
             if (gameEvent != null)
                 SceneContext.Instance.MapDirector.NotifyZoneUnlocked(gameEvent, false, 0);
+        }
+
+        if (packet.HasNavMarker && !string.IsNullOrEmpty(packet.NavMarkerMapName))
+        {
+            var director = SceneContext.Instance.MapDirector;
+            var allMaps = director._mapList._maps;
+            MapDefinition mapDef = null;
+            for (int i = 0; i < allMaps.Length; i++)
+                if (allMaps[i].name == packet.NavMarkerMapName) { mapDef = allMaps[i]; break; }
+            if (mapDef != null)
+            {
+                handlingPacket = true;
+                director.SetPlayerNavigationMarker(packet.NavMarkerPosition, mapDef, 0f);
+                handlingPacket = false;
+            }
         }
     }
 }

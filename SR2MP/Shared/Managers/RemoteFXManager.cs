@@ -66,7 +66,9 @@ public sealed class RemoteFXManager
             { PlayerFXType.None, null! },
             { PlayerFXType.VacReject, AllFX["FX_vacReject"] },
             { PlayerFXType.VacAccept, AllFX["FX_vacAcquire"] },
-            { PlayerFXType.VacShoot, AllFX["FX_VacpackShoot"] }
+            { PlayerFXType.VacShoot, AllFX["FX_VacpackShoot"] },
+            { PlayerFXType.WaterSplash, AllFX.TryGetValue("FX_WaterSplash", out var waterSplashFX) ? waterSplashFX : null! },
+            { PlayerFXType.WalkTrail, AllFX.TryGetValue("FX_walkTrail", out var walkTrailFX) ? walkTrailFX : null! },
         };
         PlayerAudioCueMap = new Dictionary<PlayerFXType, SECTR_AudioCue>
         {
@@ -102,6 +104,11 @@ public sealed class RemoteFXManager
         foreach (var (playerFX, obj) in PlayerFXMap)
         {
             if (!obj)
+                continue;
+
+            // WaterSplash is sent by the OnWaterTouchStart patch (which has a PlayerState guard).
+            // Adding NetworkPlayerFX here would also fire for slimes entering water, causing spurious packets.
+            if (playerFX == PlayerFXType.WaterSplash)
                 continue;
 
             foreach (var particle in obj.GetComponentsInChildren<ParticleSystemRenderer>(true))

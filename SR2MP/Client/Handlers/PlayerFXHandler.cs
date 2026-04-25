@@ -17,9 +17,9 @@ public sealed class PlayerFXHandler : BaseClientPacketHandler<PlayerFXPacket>
         {
             if (!IsPlayerSoundDictionary[packet.FX])
             {
-                var fxPrefab = fxManager.PlayerFXMap[packet.FX];
-
-                FXHelpers.SpawnAndPlayFX(fxPrefab, packet.Position, Quaternion.identity);
+                if (fxManager.PlayerFXMap.TryGetValue(packet.FX, out var fxPrefab) && fxPrefab)
+                    FXHelpers.SpawnAndPlayFX(fxPrefab, packet.Position, Quaternion.identity);
+                handlingPacket = false;
                 return;
             }
 

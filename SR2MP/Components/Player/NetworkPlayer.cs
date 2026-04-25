@@ -6,6 +6,7 @@ using SR2E.Utils;
 using SR2MP.Client.Models;
 using SR2MP.Components.FX;
 using SR2MP.Components.Utils;
+using SR2MP.Packets.Player;
 using SR2MP.Shared.Managers;
 
 using static SR2E.ContextShortcuts;
@@ -40,6 +41,7 @@ public partial class NetworkPlayer : MonoBehaviour
     public TextMeshPro usernamePanel;
 
     private float transformTimer = PlayerTimer;
+    private float inventoryTimer = PlayerInventoryTimer;
 
     private Animator animator;
     private bool hasAnimationController;
@@ -134,6 +136,17 @@ public partial class NetworkPlayer : MonoBehaviour
         }
 
         transformTimer -= UnityEngine.Time.unscaledDeltaTime;
+
+        if (IsLocal)
+        {
+            inventoryTimer -= UnityEngine.Time.unscaledDeltaTime;
+            if (inventoryTimer <= 0f)
+            {
+                inventoryTimer = PlayerInventoryTimer;
+                SendInventoryUpdate();
+            }
+        }
+
         if (!IsLocal)
         {
             float timer = Mathf.InverseLerp(interpolationStart, interpolationEnd, UnityEngine.Time.unscaledTime);
@@ -199,6 +212,34 @@ public partial class NetworkPlayer : MonoBehaviour
             animator.SetFloat(ForwardSpeed, model.ForwardSpeed);
             animator.SetBool(Sprinting, model.Sprinting);
         }
+    }
+
+    private void SendInventoryUpdate()
+    {
+        var slots = new List<PlayerInventoryPacket.SlotData>();
+        var ammo = sceneContext.PlayerState.Ammo;
+
+        int i = 0;
+        foreach (var slot in ammo.Slots)
+        {
+            if (slot?.Id != null && slot.Count > 0)
+            {
+                slots.Add(new PlayerInventoryPacket.SlotData
+                {
+                    SlotIndex = i,
+                    ActorTypeId = NetworkActorManager.GetPersistentID(slot.Id),
+                    Count = slot.Count,
+                    MaxCount = slot.MaxCount
+                });
+            }
+            i++;
+        }
+
+        Main.SendToAllOrServer(new PlayerInventoryPacket
+        {
+            PlayerId = LocalID,
+            Slots = slots
+        });
     }
 
     private void ReloadMeshTransform()
