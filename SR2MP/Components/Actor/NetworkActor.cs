@@ -22,6 +22,7 @@ public sealed class NetworkActor : MonoBehaviour
     private Identifiable identifiable;
     private Rigidbody rigidbody;
     private SlimeEmotions emotions;
+    private bool isResource;
 
     private float syncTimer = Timers.ActorTimer;
     public Vector3 SavedVelocity { get; internal set; }
@@ -113,6 +114,7 @@ public sealed class NetworkActor : MonoBehaviour
             }
 
             emotions = GetComponent<SlimeEmotions>();
+            isResource = GetComponent<ResourceCycle>() != null;
             cachedLocallyOwned = LocallyOwned;
             rigidbody = GetComponent<Rigidbody>();
             identifiable = GetComponent<Identifiable>();
@@ -213,6 +215,7 @@ public sealed class NetworkActor : MonoBehaviour
     {
         if (LocallyOwned) return;
         if (isDestroyed) return;
+        if (isResource) return;
 
         var timer = Mathf.InverseLerp(interpolationStart, interpolationEnd, UnityEngine.Time.unscaledTime);
         timer = Mathf.Clamp01(timer);
@@ -294,7 +297,7 @@ public sealed class NetworkActor : MonoBehaviour
 
     private void SetRigidbodyState(bool enableConstraints)
     {
-        if (!rigidbody || isDestroyed)
+        if (!rigidbody || isDestroyed || isResource)
             return;
 
         try

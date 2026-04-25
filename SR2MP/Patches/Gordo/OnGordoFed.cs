@@ -19,11 +19,15 @@ public static class OnGordoFed
         };
         Main.SendToAllOrServer(packet);
 
-        var soundPacket = new WorldFXPacket
+        Main.SendToAllOrServer(new WorldFXPacket
         {
             Position = __instance.transform.position,
             FX = WorldFXType.GordoFoodEatenSound
-        };
-        Main.SendToAllOrServer(soundPacket);
+        });
+        Main.SendToAllOrServer(new WorldFXPacket
+        {
+            Position = __instance.transform.position,
+            FX = WorldFXType.GordoFoodEaten
+        });
     }
 }
