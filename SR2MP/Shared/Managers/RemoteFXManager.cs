@@ -80,25 +80,14 @@ public sealed class RemoteFXManager
             { PlayerFXType.VacRunningEnd, AllCues["VacEnd"]},
             { PlayerFXType.VacShootSound, AllCues["VacShoot"]},
         };
-        // Get FX references from the components directly — AllFX["FX_slimeEatFav"] would pick up a
-        // live slime's child particle (not the prefab), causing NetworkWorldFX to fire on every
-        // slime animation. These are triggered by patches instead (OnSlimeEatFav, OnGordoFed).
-        GameObject slimeEatFavFX = null;
-        var slimeEats = Resources.FindObjectsOfTypeAll<SlimeEat>();
-        for (int i = 0; i < slimeEats.Length; i++)
-            if (slimeEats[i].EatFavoriteFX) { slimeEatFavFX = slimeEats[i].EatFavoriteFX; break; }
-
-        GameObject gordoEatFX = null;
-        var gordoEats = Resources.FindObjectsOfTypeAll<GordoEat>();
-        for (int i = 0; i < gordoEats.Length; i++)
-            if (gordoEats[i].EatFX) { gordoEatFX = gordoEats[i].EatFX; break; }
-
         WorldFXMap = new Dictionary<WorldFXType, GameObject>
         {
             { WorldFXType.None, null! },
             { WorldFXType.SellPlort, SellFX ?? AllFX["FX_Stars"] },
-            { WorldFXType.FavoriteFoodEaten, slimeEatFavFX! },
-            { WorldFXType.GordoFoodEaten, gordoEatFX! },
+            // FX_slimeEatFav and FX_gordoEat are live child particles on specific slimes, not prefabs.
+            // Passing them to FXHelpers.SpawnAndPlayFX corrupts the object pool and breaks all subsequent eating.
+            { WorldFXType.FavoriteFoodEaten, null! },
+            { WorldFXType.GordoFoodEaten, null! },
         };
         WorldAudioCueMap = new Dictionary<WorldFXType, SECTR_AudioCue>
         {
@@ -134,10 +123,8 @@ public sealed class RemoteFXManager
             if (!obj)
                 continue;
 
-            // FavoriteFoodEaten and GordoFoodEaten are triggered by Harmony patches, not OnEnable.
-            // Their FX references are actor-attached prefabs; attaching NetworkWorldFX would fire
-            // for every slime animation that enables those particles.
-            if (worldFX == WorldFXType.FavoriteFoodEaten || worldFX == WorldFXType.GordoFoodEaten)
+            // Skip types whose map entries are intentionally null (no prefab available).
+            if (worldFX is WorldFXType.FavoriteFoodEaten or WorldFXType.GordoFoodEaten)
                 continue;
 
             if (!obj.GetComponent<NetworkWorldFX>())
