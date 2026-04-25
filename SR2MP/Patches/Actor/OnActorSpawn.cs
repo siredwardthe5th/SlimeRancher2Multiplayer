@@ -40,9 +40,14 @@ public static class OnActorSpawn
         SceneGroup sceneGroup)
     {
         if (handlingPacket) return;
+        if (__result == null) return;
+
+        var identifiable = original.GetComponent<Identifiable>();
+        if (identifiable == null || identifiable.identType == null) return;
+
         __result.AddComponent<NetworkActor>().LocallyOwned = true;
 
-        var actorType = NetworkActorManager.GetPersistentID(original.GetComponent<Identifiable>().identType);
+        var actorType = NetworkActorManager.GetPersistentID(identifiable.identType);
         var sceneGroupId = NetworkSceneManager.GetPersistentID(sceneGroup);
 
         MelonCoroutines.Start(SpawnOverNetwork(actorType, (byte)sceneGroupId, __result));
