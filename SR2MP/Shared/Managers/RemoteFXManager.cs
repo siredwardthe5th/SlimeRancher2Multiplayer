@@ -104,9 +104,7 @@ public sealed class RemoteFXManager
             if (!obj)
                 continue;
 
-            // Please Az find a better way :sob:
-            // Made slight improvements - Az
-            foreach (var particle in resources.Where(x => x.name.Contains(obj.name)))
+            foreach (var particle in obj.GetComponentsInChildren<ParticleSystemRenderer>(true))
             {
                 if (!particle.GetComponent<NetworkPlayerFX>())
                     particle.AddComponent<NetworkPlayerFX>().fxType = playerFX;
@@ -118,7 +116,7 @@ public sealed class RemoteFXManager
             if (!obj)
                 continue;
 
-            foreach (var particle in resources.Where(x => x.name.Contains(obj.name)))
+            foreach (var particle in obj.GetComponentsInChildren<ParticleSystemRenderer>(true))
             {
                 if (!particle.GetComponent<NetworkWorldFX>())
                     particle.AddComponent<NetworkWorldFX>().fxType = worldFX;
