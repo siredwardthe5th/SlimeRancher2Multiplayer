@@ -16,6 +16,6 @@ public sealed class InitialDecorizerPacket : IPacket
 
     public void Deserialise(PacketReader reader)
     {
-        Contents = reader.ReadDictionary(PacketReaderDels.Int, PacketReaderDels.Int);
+        Contents = reader.ReadDictionary(r => r.ReadInt(), r => r.ReadInt());
     }
 }

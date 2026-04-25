@@ -54,6 +54,7 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         SendPediaPacket(clientEp);
         SendMapPacket(clientEp);
         SendAccessDoorsPacket(clientEp);
+        SendDecorizerPacket(clientEp);
         SendPricesPacket(clientEp);
 
         SrLogger.LogMessage($"Player {packet.PlayerId} successfully connected",
@@ -267,6 +268,21 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         };
 
         Main.Server.SendToClient(plotsPacket, client);
+    }
+
+    private static void SendDecorizerPacket(IPEndPoint client)
+    {
+        var model = SceneContext.Instance.GameModel.GetDecorizerModel();
+        var contents = new Dictionary<int, int>();
+
+        foreach (var kvp in model.contents._dictionary)
+        {
+            if (kvp.value > 0)
+                contents[NetworkActorManager.GetPersistentID(kvp.key)] = kvp.value;
+        }
+
+        var packet = new InitialDecorizerPacket { Contents = contents };
+        Main.Server.SendToClient(packet, client);
     }
 
     private static void SendPricesPacket(IPEndPoint client)
