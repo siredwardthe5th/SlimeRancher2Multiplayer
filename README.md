@@ -10,29 +10,29 @@
 |:-----------------:|:------:|:-----------------------------------------------------------------------------:|
 |  Player Movement  |   🟩   |                               Fully functional                                |
 | Player Animations |   🟩   |                               Fully functional                                |
-|  Player Sound FX  |   🟨   |                             Water splash missing                              |
-| Player Visual FX  |   🟨   |               Water splash particle + Vac suction trail missing               |
+|  Player Sound FX  |   🟧   |                  Water splash enum defined but not yet wired                  |
+| Player Visual FX  |   🟧   |          Water splash particle + Vac suction trail enum defined but not yet wired          |
 | Player Inventory  |   🟥   |                                Not implemented                                |
 | Initial Save load |   🟩   | Everything that is ___currently___ synchronised will be loaded on Player join |
 |  Map Expansions   |   🟩   |                               Fully functional                                |
 |      Slimes       |   🟩   |                               Fully functional                                |
 |  Actors (Items)   |   🟩   |                               Fully functional                                |
-|     Landplots     |   🟨   |  Gardens (🟧), Silos, Plort collectors & Auto-feeders missing functionality   |
+|     Landplots     |   🟨   |        Silos, Plort collectors & Auto-feeders missing functionality           |
 | Landplot upgrades |   🟩   |                               Fully functional                                |
 |    Slimepedia     |   🟩   |                               Fully functional                                |
-|      Gadgets      |   🟥   |                                Not implemented                                |
+|      Gadgets      |   🟩   |                               Fully functional                                |
 |     Upgrades      |   🟩   |                               Fully functional                                |
 |       Money       |   🟩   |                               Fully functional                                |
 |       Time        |   🟩   |                               Fully functional                                |
-|    Decorations    |   🟥   |                                Not implemented                                |
+|    Decorations    |   🟩   |                               Fully functional                                |
 |  Gray Labyrinth   |   🟨   |                            Switches are functional                            |
 |   Market Prices   |   🟩   |             Fully functional (Including price change indicators)              |
 |      Plot FX      |   🟩   |                               Fully functional                                |
 |     Market FX     |   🟩   |                               Fully functional                                |
-|  Resource Nodes   |   🟥   |                                Not implemented                                |
+|  Resource Nodes   |   🟩   |                               Fully functional                                |
 |   Gordo Slimes    |   🟩   |                               Fully functional                                |
 |      Geysers      |   🟩   |                               Fully functional                                |
-|        Map        |   🟨   |     Lightning has duplicate loot, Tornados and map icons not synchronised     |
+|        Map        |   🟨   |          Lightning has duplicate loot, map icons unfinished; Tornados not synced          |
 |    Teleporters    |   🟩   |                               Fully functional                                |
 |      Weather      |   🟩   |                               Fully functional                                |
 |     Lightning     |   🟩   |                               Fully functional                                |
