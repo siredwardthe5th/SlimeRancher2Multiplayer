@@ -58,6 +58,7 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         SendPricesPacket(clientEp);
         SendSiloContentsSnapshot(clientEp);
         SendFeederSpeedsSnapshot(clientEp);
+        SendInventoryRestore(clientEp, packet.PlayerId);
 
         SrLogger.LogMessage($"Player {packet.PlayerId} successfully connected",
             $"Player {packet.PlayerId} successfully connected from {clientEp}");
@@ -329,6 +330,18 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
                 }, client);
             }
         }
+    }
+
+    // If the joining player has a saved inventory snapshot from a previous
+    // session, push it back so the client restores the same slot contents.
+    // No-op for first-time connects (TryLoad returns false).
+    private static void SendInventoryRestore(IPEndPoint client, string playerId)
+    {
+        if (!PlayerInventoryStore.TryLoad(playerId, out var saved)) return;
+        Main.Server.SendToClient(saved, client);
+
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage($"[SR2MP-Diag-Inv] Restored inventory for joining player={playerId} slots={saved.Slots?.Count ?? 0}");
     }
 
     // Auto-feeder speed isn't part of any existing initial-state packet, so

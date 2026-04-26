@@ -8,6 +8,7 @@ using SR2MP.Components.Player;
 using SR2MP.Components.Time;
 using SR2MP.Components.UI;
 using SR2MP.Components.World;
+using PlayerInventoryBroadcaster = SR2MP.Components.Player.PlayerInventoryBroadcaster;
 using SR2MP.Packets.Utils;
 using SR2MP.Shared.Managers;
 using SR2MP.Shared.Utils;
@@ -111,6 +112,9 @@ public sealed class Main : SR2EExpansionV3
 
                 var feederReconciler = new GameObject("SR2MP_FeederSpeedReconciler").AddComponent<FeederSpeedReconciler>();
                 Object.DontDestroyOnLoad(feederReconciler.gameObject);
+
+                var inventoryBroadcaster = new GameObject("SR2MP_PlayerInventoryBroadcaster").AddComponent<PlayerInventoryBroadcaster>();
+                Object.DontDestroyOnLoad(inventoryBroadcaster.gameObject);
 
                 Server.OnServerStarted += () => cheatsEnabled = AllowCheats;
 

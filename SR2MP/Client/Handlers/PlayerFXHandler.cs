@@ -130,15 +130,27 @@ public sealed class PlayerFXHandler : BaseClientPacketHandler<PlayerFXPacket>
         }
         if (!prefab) return;
 
+        // ─────────────────────────────────────────────────────────────────
+        // ACTIVE: chest-attached. Parents the FX to the player root with a
+        // chest-height local offset. Trail appears in front of the remote
+        // player's torso and tracks body rotation. Doesn't track arm/gun
+        // pose — see Patches/FX/OnVacuumFXLifecycle.cs for the full writeup
+        // of why bone attachment didn't work and what we tried.
+        //
+        // Bone-attached alternative (preserved for future re-attempt):
+        /*
         // One-time hierarchy dump per player so we can verify bone names if
         // attach point still looks wrong (only runs when DiagnosticLogging
-        // is on AND we haven't dumped this player yet).
+        // is on AND we haven't dumped this player yet). Requires uncommenting
+        // RemoteFXManager.DumpHierarchy and the _hierarchyDumped HashSet at
+        // the bottom of this class.
         if (Main.DiagnosticLogging && _hierarchyDumped.Add(packet.Player ?? string.Empty))
             RemoteFXManager.DumpHierarchy(src.transform, $"player={packet.Player}");
 
         // Prefer to attach to the right-hand bone so the FX tracks the gun.
         // If the lookup misses, fall back to the player root with a chest
-        // offset (visible but stationary).
+        // offset (visible but stationary). Requires uncommenting
+        // RemoteFXManager.FindRightHandTransform.
         var attachTo = RemoteFXManager.FindRightHandTransform(src.transform);
         var parent = attachTo != null ? attachTo.gameObject : src;
 
@@ -147,7 +159,11 @@ public sealed class PlayerFXHandler : BaseClientPacketHandler<PlayerFXPacket>
         {
             instance.name = "SR2MP_VacTrail";
             instance.transform.localPosition = attachTo != null ? Vector3.zero : new Vector3(0f, 1.2f, 0f);
-            instance.transform.localRotation = Quaternion.identity;
+            // Inherit the attach bone's rotation when bone-attached (joint11
+            // points along the hose, so the FX shoots forward correctly). On
+            // the player-root fallback, identity is fine since there's no
+            // meaningful direction to aim.
+            if (attachTo == null) instance.transform.localRotation = Quaternion.identity;
             instance.SetActive(true);
 
             var ps = instance.GetComponentInChildren<ParticleSystem>();
@@ -158,13 +174,34 @@ public sealed class PlayerFXHandler : BaseClientPacketHandler<PlayerFXPacket>
             if (Main.DiagnosticLogging)
                 SrLogger.LogMessage($"[SR2MP-Diag-VacFX] VacTrailStart spawned '{prefab.name}' on '{parent.name}' (handBone={(attachTo != null ? attachTo.name : "<none>")} active={instance.activeInHierarchy} hasPS={ps != null})");
         }
+        */
+        // ─────────────────────────────────────────────────────────────────
+
+        var instance = FXHelpers.SpawnAndPlayFX(prefab, src);
+        if (instance != null)
+        {
+            instance.name = "SR2MP_VacTrail";
+            instance.transform.localPosition = new Vector3(0f, 1.2f, 0f);
+            instance.transform.localRotation = Quaternion.identity;
+            instance.SetActive(true);
+
+            var ps = instance.GetComponentInChildren<ParticleSystem>();
+            if (ps != null) ps.Play(true);
+
+            _activeTrails[key] = instance;
+
+            if (Main.DiagnosticLogging)
+                SrLogger.LogMessage($"[SR2MP-Diag-VacFX] VacTrailStart spawned '{prefab.name}' on '{src.name}' (active={instance.activeInHierarchy} hasPS={ps != null})");
+        }
         else if (Main.DiagnosticLogging)
         {
             SrLogger.LogMessage($"[SR2MP-Diag-VacFX] VacTrailStart: SpawnAndPlayFX returned null for prefab '{prefab.name}'");
         }
     }
 
-    // Tracks which players we've already dumped the bone hierarchy for so we
-    // don't spam the log on every vac press.
-    private static readonly HashSet<string> _hierarchyDumped = new();
+    // Tracked players we've already dumped the bone hierarchy for. Used by
+    // the commented-out bone-attach code path above; uncomment if re-enabling
+    // the hierarchy dump.
+    //
+    // private static readonly HashSet<string> _hierarchyDumped = new();
 }

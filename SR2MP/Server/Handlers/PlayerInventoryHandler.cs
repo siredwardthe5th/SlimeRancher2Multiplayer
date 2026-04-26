@@ -13,6 +13,12 @@ public sealed class PlayerInventoryHandler : BasePacketHandler<PlayerInventoryPa
 
     protected override void Handle(PlayerInventoryPacket packet, IPEndPoint clientEp)
     {
-        Main.Server.SendToAllExcept(packet, clientEp);
+        // Persist the inventory snapshot. Other clients have no UI for a
+        // remote player's inventory, so don't forward — the host is the
+        // sole consumer of this packet.
+        PlayerInventoryStore.Save(packet.PlayerId, packet);
+
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage($"[SR2MP-Diag-Inv] Stored inventory for player={packet.PlayerId} slots={packet.Slots?.Count ?? 0}");
     }
 }

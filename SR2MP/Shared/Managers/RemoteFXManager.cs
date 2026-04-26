@@ -30,32 +30,45 @@ public sealed class RemoteFXManager
         return null!;
     }
 
-    // Best place to attach the remote vac trail VFX. SR2's Beatrix has the
-    // actual vac gun mesh (`mesh_vacpac`) parented to her rig, so attaching
-    // there gives perfect tracking of the gun's third-person pose. Falls back
-    // to the right-hand bone (`rWristJ`) and finally null.
+    // ─────────────────────────────────────────────────────────────────────────
+    // BONE-ATTACH HELPERS (preserved for future re-attempt; see
+    // Patches/FX/OnVacuumFXLifecycle.cs for the full investigation writeup).
     //
-    // Bone naming for SR2 specifically (verified via [SR2MP-Diag-Hier] dump):
-    //   rWristJ, rForearmJ, rElbowJ, rShoulderJ, rClavicleJ
-    //   mesh_vacpac, mesh_vacpac_hose, anchor_joint21
+    // Goal was to attach the vac trail FX to a specific bone on the remote
+    // player so it tracks the gun pose. Every candidate had a problem:
+    //   - mesh_vacpac is hip-parented (no arm tracking) and tilted
+    //   - joint11 (hose tip) lives under inactive parent → FX inherits inactive
+    //   - rWristJ would track arm but isn't where the vac actually is
+    // Reverted to chest-attached for now. To re-enable bone attachment, restore
+    // these helpers and the corresponding spawn code in the receive handlers.
+    /*
     public static Transform? FindRightHandTransform(Transform root)
     {
-        // Direct names first (case-sensitive exact match), then heuristic
-        // patterns for non-SR2 humanoid models we might use later.
-        var direct = FindInHierarchy(root, t =>
-            t.name == "mesh_vacpac"
-            || t.name == "anchor_joint21"
-            || t.name == "rWristJ");
-        if (direct != null) return direct;
+        // Priority order matters: joint11 is a *grandchild* of mesh_vacpac,
+        // so a single combined predicate would always pick mesh_vacpac first
+        // (depth-first walk visits the parent first). Run separate searches
+        // and take the first non-null match.
+        //
+        // Also: any candidate must be in an active hierarchy. The hose
+        // joints (joint11) live under mesh_vacpac_hose which is sometimes
+        // disabled on the BeatrixMainMenu rig — attaching to an inactive
+        // parent makes the FX child inherit `activeInHierarchy=false` and
+        // it never renders.
+        Transform? FindNamedActive(string name) =>
+            FindInHierarchy(root, t => t.name == name && t.gameObject.activeInHierarchy);
 
-        string[] patterns = { "righthand", "hand_r", "hand.r", "r_hand", "rhand", "wrist_r", "wrist.r" };
-        return FindInHierarchy(root, t =>
-        {
-            var n = t.name.ToLowerInvariant().Replace(" ", "");
-            foreach (var p in patterns)
-                if (n.Contains(p)) return true;
-            return false;
-        });
+        return FindNamedActive("joint11")          // hose muzzle — forward axis = aim direction
+            ?? FindNamedActive("anchor_joint21")   // hose anchor — second-best on the hose
+            ?? FindNamedActive("mesh_vacpac")      // gun body — works but tilted
+            ?? FindNamedActive("rWristJ")          // right wrist (non-vac humanoid models)
+            ?? FindInHierarchy(root, t =>
+            {
+                if (!t.gameObject.activeInHierarchy) return false;
+                var n = t.name.ToLowerInvariant().Replace(" ", "");
+                foreach (var p in new[] { "righthand", "hand_r", "hand.r", "r_hand", "rhand", "wrist_r", "wrist.r" })
+                    if (n.Contains(p)) return true;
+                return false;
+            });
     }
 
     private static Transform? FindInHierarchy(Transform root, Func<Transform, bool> match)
@@ -72,7 +85,8 @@ public sealed class RemoteFXManager
 
     // One-shot debug: dump the entire transform hierarchy under `root`. Useful
     // when we need to know what bones exist on the remote player model so we
-    // can pick a correct attach point.
+    // can pick a correct attach point. Was invoked once per player from the
+    // receive handlers and emitted [SR2MP-Diag-Hier] log entries.
     public static void DumpHierarchy(Transform root, string tag)
     {
         DumpHierarchyRecursive(root, tag, 0);
@@ -84,6 +98,7 @@ public sealed class RemoteFXManager
         for (int i = 0; i < t.childCount; i++)
             DumpHierarchyRecursive(t.GetChild(i), tag, depth + 1);
     }
+    */
 
     // Re-resolve a PlayerFX prefab from currently-loaded ParticleSystemRenderer
     // objects. Used as a fallback when a cached PlayerFXMap entry's GameObject

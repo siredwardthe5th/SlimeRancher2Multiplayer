@@ -10,14 +10,14 @@
 |:-----------------:|:------:|:-----------------------------------------------------------------------------:|
 |  Player Movement  |   🟩   |                               Fully functional                                |
 | Player Animations |   🟩   |                               Fully functional                                |
-|  Player Sound FX  |   🟨   |                             Water splash missing                              |
-| Player Visual FX  |   🟨   |               Water splash particle + Vac suction trail missing               |
-| Player Inventory  |   🟥   |                                Not implemented                                |
+|  Player Sound FX  |   🟨   |                          Water splash sound missing                           |
+| Player Visual FX  |   🟨   |          Water splash particle missing; vac trail visible but chest-attached  |
+| Player Inventory  |   🟩   |   Server-side persistence (saved per player on host, restored on reconnect)   |
 | Initial Save load |   🟩   | Everything that is ___currently___ synchronised will be loaded on Player join |
 |  Map Expansions   |   🟩   |                               Fully functional                                |
 |      Slimes       |   🟩   |                               Fully functional                                |
 |  Actors (Items)   |   🟩   |                               Fully functional                                |
-|     Landplots     |   🟨   |  Gardens (🟧), Silos, Plort collectors & Auto-feeders missing functionality   |
+|     Landplots     |   🟩   |  Gardens, Silos, Plort collectors & Auto-feeders all functional               |
 | Landplot upgrades |   🟩   |                               Fully functional                                |
 |    Slimepedia     |   🟩   |                               Fully functional                                |
 |      Gadgets      |   🟩   |          Place / remove / load (no UI editing of placement remotely)          |
@@ -32,7 +32,7 @@
 |  Resource Nodes   |   🟩   |                  Spawn / despawn / initial state load                         |
 |   Gordo Slimes    |   🟩   |                               Fully functional                                |
 |      Geysers      |   🟩   |                               Fully functional                                |
-|        Map        |   🟨   |                          Lightning has duplicate loot                         |
+|        Map        |   🟩   |                               Fully functional                                |
 |     Tornados      |   🟩   |                               Fully functional                                |
 | Navigation Markers|   🟩   |                  Map ping / nav marker set + cleared sync                     |
 |    Teleporters    |   🟥   |  Not implemented (player position sync makes them appear to work cosmetically) |

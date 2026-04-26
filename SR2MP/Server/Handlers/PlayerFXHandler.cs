@@ -106,6 +106,12 @@ public sealed class PlayerFXHandler : BasePacketHandler<PlayerFXPacket>
         }
         if (!prefab) return;
 
+        // ─────────────────────────────────────────────────────────────────
+        // ACTIVE: chest-attached. See Client/Handlers/PlayerFXHandler.cs and
+        // Patches/FX/OnVacuumFXLifecycle.cs for the full rationale.
+        //
+        // Bone-attached alternative (preserved for future re-attempt):
+        /*
         if (Main.DiagnosticLogging && _hierarchyDumped.Add(packet.Player ?? string.Empty))
             RemoteFXManager.DumpHierarchy(src.transform, $"(server) player={packet.Player}");
 
@@ -117,7 +123,7 @@ public sealed class PlayerFXHandler : BasePacketHandler<PlayerFXPacket>
         {
             instance.name = "SR2MP_VacTrail";
             instance.transform.localPosition = attachTo != null ? Vector3.zero : new Vector3(0f, 1.2f, 0f);
-            instance.transform.localRotation = Quaternion.identity;
+            if (attachTo == null) instance.transform.localRotation = Quaternion.identity;
             instance.SetActive(true);
 
             var ps = instance.GetComponentInChildren<ParticleSystem>();
@@ -128,7 +134,29 @@ public sealed class PlayerFXHandler : BasePacketHandler<PlayerFXPacket>
             if (Main.DiagnosticLogging)
                 SrLogger.LogMessage($"[SR2MP-Diag-VacFX] (server) VacTrailStart spawned '{prefab.name}' on '{parent.name}' (handBone={(attachTo != null ? attachTo.name : "<none>")} active={instance.activeInHierarchy} hasPS={ps != null})");
         }
+        */
+        // ─────────────────────────────────────────────────────────────────
+
+        var instance = FXHelpers.SpawnAndPlayFX(prefab, src);
+        if (instance != null)
+        {
+            instance.name = "SR2MP_VacTrail";
+            instance.transform.localPosition = new Vector3(0f, 1.2f, 0f);
+            instance.transform.localRotation = Quaternion.identity;
+            instance.SetActive(true);
+
+            var ps = instance.GetComponentInChildren<ParticleSystem>();
+            if (ps != null) ps.Play(true);
+
+            _activeTrails[key] = instance;
+
+            if (Main.DiagnosticLogging)
+                SrLogger.LogMessage($"[SR2MP-Diag-VacFX] (server) VacTrailStart spawned '{prefab.name}' on '{src.name}' (active={instance.activeInHierarchy} hasPS={ps != null})");
+        }
     }
 
-    private static readonly HashSet<string> _hierarchyDumped = new();
+    // Tracked players we've already dumped the bone hierarchy for. Uncomment
+    // alongside the bone-attach code path above if re-enabling.
+    //
+    // private static readonly HashSet<string> _hierarchyDumped = new();
 }
