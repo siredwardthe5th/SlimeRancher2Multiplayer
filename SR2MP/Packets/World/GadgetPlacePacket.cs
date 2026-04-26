@@ -11,7 +11,7 @@ public sealed class GadgetPlacePacket : IPacket
     public int SceneGroupId { get; set; }
 
     public PacketType Type => PacketType.GadgetPlace;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

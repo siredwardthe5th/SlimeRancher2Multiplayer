@@ -11,7 +11,7 @@ public static class OnPlayerUpgraded
     {
         if (handlingPacket) return;
 
-        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
+        if (!MultiplayerActive) return;
 
         var packet = new PlayerUpgradePacket { UpgradeID = (byte)definition._uniqueId };
 

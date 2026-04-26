@@ -7,7 +7,7 @@ public sealed class GadgetRemovePacket : IPacket
     public long ActorId { get; set; }
 
     public PacketType Type => PacketType.GadgetRemove;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer) => writer.WriteLong(ActorId);
     public void Deserialise(PacketReader reader) => ActorId = reader.ReadLong();

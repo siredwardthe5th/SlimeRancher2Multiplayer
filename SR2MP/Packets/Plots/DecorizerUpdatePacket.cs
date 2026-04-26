@@ -8,7 +8,7 @@ public sealed class DecorizerUpdatePacket : IPacket
     public bool IsAdd { get; set; }
 
     public PacketType Type => PacketType.DecorizerUpdate;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

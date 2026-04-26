@@ -7,7 +7,7 @@ public sealed class InitialDecorizerPacket : IPacket
     public Dictionary<int, int> Contents { get; set; } = new();
 
     public PacketType Type => PacketType.InitialDecorizer;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

@@ -12,7 +12,7 @@ public sealed class WeatherPacket : IPacket
     public Dictionary<byte, WeatherZoneData> Zones;
 
     public PacketType Type { get; private init; }
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer) => writer.WriteDictionary(Zones, PacketWriterDels.Byte, PacketWriterDels.NetObject<WeatherZoneData>.Func);
 

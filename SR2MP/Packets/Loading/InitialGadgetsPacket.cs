@@ -34,7 +34,7 @@ public sealed class InitialGadgetsPacket : IPacket
     public List<GadgetEntry> Gadgets { get; set; } = new();
 
     public PacketType Type => PacketType.InitialGadgets;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
         => writer.WriteList(Gadgets, PacketWriterDels.NetObject<GadgetEntry>.Func);

@@ -18,6 +18,117 @@ public sealed class RemoteFXManager
     public GameObject FootstepFX;
     public GameObject? SellFX;
 
+    // Case-insensitive substring lookup for FX whose exact prefab name we don't
+    // know at compile time. Returns the first match in AllFX or null.
+    private GameObject FindFX(string substring)
+    {
+        foreach (var kv in AllFX)
+        {
+            if (kv.Key.Contains(substring, StringComparison.OrdinalIgnoreCase))
+                return kv.Value;
+        }
+        return null!;
+    }
+
+    // Best place to attach the remote vac trail VFX. SR2's Beatrix has the
+    // actual vac gun mesh (`mesh_vacpac`) parented to her rig, so attaching
+    // there gives perfect tracking of the gun's third-person pose. Falls back
+    // to the right-hand bone (`rWristJ`) and finally null.
+    //
+    // Bone naming for SR2 specifically (verified via [SR2MP-Diag-Hier] dump):
+    //   rWristJ, rForearmJ, rElbowJ, rShoulderJ, rClavicleJ
+    //   mesh_vacpac, mesh_vacpac_hose, anchor_joint21
+    public static Transform? FindRightHandTransform(Transform root)
+    {
+        // Direct names first (case-sensitive exact match), then heuristic
+        // patterns for non-SR2 humanoid models we might use later.
+        var direct = FindInHierarchy(root, t =>
+            t.name == "mesh_vacpac"
+            || t.name == "anchor_joint21"
+            || t.name == "rWristJ");
+        if (direct != null) return direct;
+
+        string[] patterns = { "righthand", "hand_r", "hand.r", "r_hand", "rhand", "wrist_r", "wrist.r" };
+        return FindInHierarchy(root, t =>
+        {
+            var n = t.name.ToLowerInvariant().Replace(" ", "");
+            foreach (var p in patterns)
+                if (n.Contains(p)) return true;
+            return false;
+        });
+    }
+
+    private static Transform? FindInHierarchy(Transform root, Func<Transform, bool> match)
+    {
+        if (match(root)) return root;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var child = root.GetChild(i);
+            var found = FindInHierarchy(child, match);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    // One-shot debug: dump the entire transform hierarchy under `root`. Useful
+    // when we need to know what bones exist on the remote player model so we
+    // can pick a correct attach point.
+    public static void DumpHierarchy(Transform root, string tag)
+    {
+        DumpHierarchyRecursive(root, tag, 0);
+    }
+
+    private static void DumpHierarchyRecursive(Transform t, string tag, int depth)
+    {
+        SrLogger.LogMessage($"[SR2MP-Diag-Hier] {tag} {new string(' ', depth * 2)}{t.name}");
+        for (int i = 0; i < t.childCount; i++)
+            DumpHierarchyRecursive(t.GetChild(i), tag, depth + 1);
+    }
+
+    // Re-resolve a PlayerFX prefab from currently-loaded ParticleSystemRenderer
+    // objects. Used as a fallback when a cached PlayerFXMap entry's GameObject
+    // got destroyed between Initialize() and use (Unity-side cleanup of
+    // transient FX instances). Falls back through the same priority list as
+    // the original Initialize lookup.
+    public GameObject? RefreshVacTrailPrefab()
+    {
+        var resources = Resources.FindObjectsOfTypeAll<ParticleSystemRenderer>();
+
+        GameObject? FirstMatch(string sub)
+        {
+            foreach (var p in resources)
+            {
+                if (!p) continue;
+                var go = p.gameObject;
+                if (!go) continue;
+                if (go.name.Contains(sub, StringComparison.OrdinalIgnoreCase))
+                    return go;
+            }
+            return null;
+        }
+
+        var fresh = FirstMatch("FX_Vac_Dust") ?? FirstMatch("FX Vac Dust")
+                 ?? FirstMatch("FX_Vac_Rings") ?? FirstMatch("FX Vac Rings")
+                 ?? FirstMatch("Droplets_Vacced")
+                 ?? FirstMatch("VacuumTrail") ?? FirstMatch("VacTrail")
+                 ?? FirstMatch("PS_VacuumDirectional") ?? FirstMatch("PS VacuumDirectional");
+
+        if (fresh != null)
+            PlayerFXMap[PlayerFXType.VacTrail] = fresh;
+
+        return fresh;
+    }
+
+    private SECTR_AudioCue FindCue(string substring)
+    {
+        foreach (var kv in AllCues)
+        {
+            if (kv.Key.Contains(substring, StringComparison.OrdinalIgnoreCase))
+                return kv.Value;
+        }
+        return null!;
+    }
+
     private static Predicate<SECTR_AudioCue> Force3DCondition => cue =>
     {
         // Movement SFX
@@ -66,7 +177,25 @@ public sealed class RemoteFXManager
             { PlayerFXType.None, null! },
             { PlayerFXType.VacReject, AllFX["FX_vacReject"] },
             { PlayerFXType.VacAccept, AllFX["FX_vacAcquire"] },
-            { PlayerFXType.VacShoot, AllFX["FX_VacpackShoot"] }
+            { PlayerFXType.VacShoot, AllFX["FX_VacpackShoot"] },
+            // Substring lookups for FX whose exact prefab name we don't know;
+            // null is acceptable and the receive handler tolerates it.
+            { PlayerFXType.WaterSplash, FindFX("WaterSplash") ?? FindFX("Splash") },
+            { PlayerFXType.WalkTrail, FindFX("WalkTrail") ?? FindFX("FootTrail") },
+            // VacTrail is the visible "vacuum stream" effect attached to a remote
+            // player while they hold the vac button. Original lookup found
+            // nothing on 1.2.0 — diag dump shows the actual prefab names are
+            // FX_Vac_Rings / FX_Vac_Dust / PS_VacuumDirectional.
+            //
+            // Tried PS_VacuumDirectional first: spawns + reports active=True
+            // but emits nothing — it's a directional stream that needs the
+            // vacuum aim/distance shader inputs (`vacWindDistance`, etc.) to
+            // visibly emit. Detached from the vac aim logic it's inert.
+            //
+            // FX_Vac_Dust / FX_Vac_Rings are simpler ambient particle systems
+            // that emit on Play() without external inputs. Try those first
+            // and only fall back to the directional one as last resort.
+            { PlayerFXType.VacTrail, FindFX("FX_Vac_Dust") ?? FindFX("FX_Vac_Rings") ?? FindFX("Droplets_Vacced") ?? FindFX("VacuumTrail") ?? FindFX("VacTrail") ?? FindFX("PS_VacuumDirectional") ?? FindFX("VacFX") },
         };
         PlayerAudioCueMap = new Dictionary<PlayerFXType, SECTR_AudioCue>
         {
@@ -78,6 +207,7 @@ public sealed class RemoteFXManager
             { PlayerFXType.VacRunningStart, AllCues["VacStart"]},
             { PlayerFXType.VacRunningEnd, AllCues["VacEnd"]},
             { PlayerFXType.VacShootSound, AllCues["VacShoot"]},
+            { PlayerFXType.WaterSplashSound, FindCue("WaterSplash") ?? FindCue("Splash") ?? FindCue("Water") },
         };
         WorldFXMap = new Dictionary<WorldFXType, GameObject>
         {
@@ -139,6 +269,29 @@ public sealed class RemoteFXManager
         }
 
         SrLogger.LogMessage("RemoteFXManager initialized", SrLogTarget.Both);
+
+        if (Main.DiagnosticLogging)
+        {
+            // Dump every FX prefab name and audio cue name so we can find the
+            // right names for water splash, vac trail, garden FX, etc.
+            // grep MelonLogger output for [SR2MP-Diag-FX] / [SR2MP-Diag-Cue].
+            var fxNames = new List<string>(AllFX.Keys);
+            fxNames.Sort();
+            foreach (var n in fxNames) SrLogger.LogMessage($"[SR2MP-Diag-FX] {n}");
+
+            var cueNames = new List<string>(AllCues.Keys);
+            cueNames.Sort();
+            foreach (var n in cueNames) SrLogger.LogMessage($"[SR2MP-Diag-Cue] {n}");
+
+            SrLogger.LogMessage($"[SR2MP-Diag-FX] (total {fxNames.Count} FX prefabs)");
+            SrLogger.LogMessage($"[SR2MP-Diag-Cue] (total {cueNames.Count} audio cues)");
+
+            // Report which Player FX have a resolved (non-null) prefab/cue.
+            foreach (var (k, v) in PlayerFXMap)
+                SrLogger.LogMessage($"[SR2MP-Diag-Map] PlayerFXMap[{k}] = {(v ? v.name : "<null>")}");
+            foreach (var (k, v) in PlayerAudioCueMap)
+                SrLogger.LogMessage($"[SR2MP-Diag-Map] PlayerAudioCueMap[{k}] = {(v ? v.name : "<null>")}");
+        }
     }
 
     public bool TryGetFXType(SECTR_AudioCue cue, out PlayerFXType fxType) => TryGetFXType(cue, PlayerAudioCueMap, out fxType);

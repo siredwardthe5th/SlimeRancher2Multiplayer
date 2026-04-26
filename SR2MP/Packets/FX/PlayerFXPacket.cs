@@ -19,6 +19,10 @@ public sealed class PlayerFXPacket : IPacket
         VacRunningStart,
         VacRunningEnd,
         VacShootSound,
+        VacTrailStart,
+        VacTrailEnd,
+        VacTrail,           // visual particle attached to player while vacuuming
+        WaterSplashSound,   // companion audio for WaterSplash visual
     }
 
     public PlayerFXType FX { get; set; }

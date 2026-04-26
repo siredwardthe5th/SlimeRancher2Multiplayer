@@ -6,16 +6,29 @@ namespace SR2MP.Components.UI;
 
 public sealed partial class MultiplayerUI
 {
+    // SR2E.MenuEUtil.CloseOpenMenu throws NRE on SR2 1.2.0 (its
+    // GetChildren helper returns null in the Unity 6 build). Wrap so the
+    // exception doesn't abort Host/Connect — closing an open game menu
+    // is a UX nicety, not load-bearing for hosting/joining.
+    private static void TryCloseOpenMenu()
+    {
+        try { MenuEUtil.CloseOpenMenu(); }
+        catch (Exception ex)
+        {
+            SrLogger.LogWarning($"MenuEUtil.CloseOpenMenu failed (ignored): {ex.Message}");
+        }
+    }
+
     public void Host(ushort port)
     {
-        MenuEUtil.CloseOpenMenu();
+        TryCloseOpenMenu();
         Main.Server.Start(port, true);
         Main.SetConfigValue("host_port", hostPortInput);
     }
 
     public void Connect(string ip, ushort port)
     {
-        MenuEUtil.CloseOpenMenu();
+        TryCloseOpenMenu();
 
         if (ip.StartsWith("[") && ip.EndsWith("]"))
         {

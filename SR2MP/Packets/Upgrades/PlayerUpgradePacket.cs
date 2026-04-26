@@ -7,7 +7,7 @@ public struct PlayerUpgradePacket : IPacket
     public byte UpgradeID { get; set; }
 
     public readonly PacketType Type => PacketType.PlayerUpgrade;
-    public readonly PacketReliability Reliability => PacketReliability.Reliable;
+    public readonly PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public readonly void Serialise(PacketWriter writer) => writer.WriteByte(UpgradeID);
 

@@ -7,7 +7,7 @@ public sealed class MapUnlockPacket : IPacket
     public string NodeID { get; set; }
 
     public PacketType Type => PacketType.MapUnlock;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer) => writer.WriteString(NodeID);
 

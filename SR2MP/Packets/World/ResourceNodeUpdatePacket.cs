@@ -9,7 +9,7 @@ public sealed class ResourceNodeUpdatePacket : IPacket
     public bool IsSpawned { get; set; }
 
     public PacketType Type => PacketType.ResourceNodeUpdate;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

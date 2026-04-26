@@ -1,0 +1,91 @@
+using HarmonyLib;
+using Il2CppMonomiPark.SlimeRancher.Player;
+using SR2MP.Shared.Managers;
+
+namespace SR2MP.Patches.Plots;
+
+// Workaround for SiloStorage.OnIdentifiableRemoved being unpatchable on
+// SR2 1.2.0 / MelonLoader 0.7.2 (patch installs OK but first execution
+// hard-crashes with no managed exception).
+//
+// AmmoSlotManager.Decrement is the lower-level method that silo removes
+// (and player vac decrements, drone takes, etc.) ultimately call. Patching
+// it gives us coverage for silo content removals — at the cost of also
+// firing for player ammo and other AmmoSlotManager users.
+//
+// To filter: walk the game's land plots and find one whose SiloStorage's
+// AmmoSlotManager matches __instance. If found, broadcast the slot change.
+// If not, this Decrement was for some other purpose (player vac, drone) —
+// skip silently. The walk is O(N_plots), but plots are few and Decrement
+// is rare relative to per-frame work.
+[HarmonyPatch(typeof(AmmoSlotManager), nameof(AmmoSlotManager.Decrement), typeof(int), typeof(int))]
+internal static class OnAmmoSlotDecrementByIndex
+{
+    public static void Postfix(AmmoSlotManager __instance, int index, int count)
+    {
+        if (handlingPacket) return;
+        if (!MultiplayerActive) return;
+
+        // Diag: log every entry to this Postfix BEFORE the silo lookup so
+        // we can see whether the patch fires at all when the user vacuums
+        // food OUT of a silo/feeder. Silo lookup may return null for player
+        // ammo / drone decrements and silently skip.
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage($"[SR2MP-Diag-Silo] Decrement(index) entry — slot={index} count={count}");
+
+        var silo = FindSiloFor(__instance);
+        if (silo == null)
+        {
+            if (Main.DiagnosticLogging)
+                SrLogger.LogMessage("[SR2MP-Diag-Silo] Decrement(index) -> not a silo, skip");
+            return;
+        }
+
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage($"[SR2MP-Diag-Silo] Decrement(index) -> matched silo, broadcasting slot {index}");
+
+        SiloBroadcaster.BroadcastSlot(silo, index);
+    }
+
+    internal static SiloStorage? FindSiloFor(AmmoSlotManager ammo)
+    {
+        if (ammo == null) return null;
+
+        var landPlots = SceneContext.Instance?.GameModel?.landPlots;
+        if (landPlots == null) return null;
+
+        foreach (var entry in landPlots)
+        {
+            var go = entry.value?.gameObj;
+            if (!go) continue;
+
+            var silo = go.GetComponentInChildren<SiloStorage>();
+            if (!silo) continue;
+
+            // Equality on Il2Cpp wrappers compares underlying pointer; works
+            // even if the wrapper instances are different.
+            var siloAmmo = silo.GetRelevantAmmo();
+            if (siloAmmo != null && siloAmmo.Pointer == ammo.Pointer)
+                return silo;
+        }
+        return null;
+    }
+}
+
+[HarmonyPatch(typeof(AmmoSlotManager), nameof(AmmoSlotManager.Decrement), typeof(IdentifiableType), typeof(int))]
+internal static class OnAmmoSlotDecrementById
+{
+    public static void Postfix(AmmoSlotManager __instance)
+    {
+        if (handlingPacket) return;
+        if (!MultiplayerActive) return;
+
+        var silo = OnAmmoSlotDecrementByIndex.FindSiloFor(__instance);
+        if (silo == null) return;
+
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage("[SR2MP-Diag-Silo] AmmoSlotManager.Decrement (id) -> broadcast all slots");
+
+        SiloBroadcaster.BroadcastAllSlots(silo);
+    }
+}

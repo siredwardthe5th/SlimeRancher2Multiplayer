@@ -32,7 +32,9 @@
 |  Resource Nodes   |   🟩   |                  Spawn / despawn / initial state load                         |
 |   Gordo Slimes    |   🟩   |                               Fully functional                                |
 |      Geysers      |   🟩   |                               Fully functional                                |
-|        Map        |   🟨   |     Lightning has duplicate loot, Tornados and map icons not synchronised     |
+|        Map        |   🟨   |                          Lightning has duplicate loot                         |
+|     Tornados      |   🟩   |                               Fully functional                                |
+| Navigation Markers|   🟩   |                  Map ping / nav marker set + cleared sync                     |
 |    Teleporters    |   🟥   |  Not implemented (player position sync makes them appear to work cosmetically) |
 |      Weather      |   🟩   |                               Fully functional                                |
 |     Lightning     |   🟩   |                               Fully functional                                |

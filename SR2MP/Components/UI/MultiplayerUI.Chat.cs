@@ -212,7 +212,10 @@ public sealed partial class MultiplayerUI
 
     private void SetChatFocus(bool focus)
     {
-        GUI.FocusControl(focus ? ChatInputName : null);
+        // GUI.FocusControl goes through the same broken Il2CppInterop binding
+        // as SetNextControlName on 1.2.0 (ReadOnlySpan.GetPinnableReference).
+        // Drive focus directly via SafeTextField's static _focusedField.
+        _focusedField = focus ? ChatInputName : null;
 
         if (focus) shouldFocusChat = false;
         else shouldUnfocusChat = false;
@@ -231,9 +234,10 @@ public sealed partial class MultiplayerUI
 
     private void UpdateChatFocusState()
     {
-        string currentChatFocus = GUI.GetNameOfFocusedControl();
+        // Read SafeTextField's static focus tracker instead of
+        // GUI.GetNameOfFocusedControl (broken on 1.2.0).
         bool wasPreviouslyFocused = isChatFocused;
-        isChatFocused = currentChatFocus == ChatInputName;
+        isChatFocused = _focusedField == ChatInputName;
 
         if (isChatFocused && !wasPreviouslyFocused)
         {
@@ -263,7 +267,7 @@ public sealed partial class MultiplayerUI
         // that depends on Il2CppSystem.ReadOnlySpan`1.GetPinnableReference (missing
         // in MelonLoader 0.7.2). Calling it throws every OnGUI tick. The chat panel
         // is multiplayer-only, so skip it entirely outside of an active session.
-        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
+        if (!MultiplayerActive) return;
 
         float chatY = Screen.height / 2;
 
@@ -280,7 +284,8 @@ public sealed partial class MultiplayerUI
             RenderChatMessage(message);
         }
 
-        GUI.SetNextControlName(ChatInputName);
+        // SetNextControlName not needed — SafeTextField uses its own focus
+        // tracker. Calling it on 1.2.0 throws ReadOnlySpan MissingMethod.
 
         if (string.IsNullOrEmpty(chatInput) && !isChatFocused)
         {
@@ -298,15 +303,13 @@ public sealed partial class MultiplayerUI
             );
         }
 
-        // SR2 1.2.0: GUI.TextField throws unstripping-failed every OnGUI tick.
-        // Use a read-only label until Il2CppInterop ships TextEditor unstripping.
-        // Chat input is therefore non-functional in this build of SR2MP for SR2 1.2.0.
         chatInput = SafeTextField(
             new Rect(6 + HorizontalSpacing,
                      chatY + ChatHeight - InputHeight - 5,
                      ChatWidth - (HorizontalSpacing * 2),
                      InputHeight),
-            chatInput
+            chatInput,
+            ChatInputName
         );
 
         UpdateChatFocusState();

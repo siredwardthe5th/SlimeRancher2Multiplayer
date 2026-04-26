@@ -11,7 +11,7 @@ public static class OnGadgetPlaced
     public static void Postfix(Gadget __instance)
     {
         if (handlingPacket) return;
-        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
+        if (!MultiplayerActive) return;
 
         var model = __instance._model;
         if (model == null || model.actorId.Value == 0) return;

@@ -12,7 +12,7 @@ public sealed class GordoFeedPacket : IPacket
     public int GordoType { get; set; }
 
     public PacketType Type => PacketType.GordoFeed;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

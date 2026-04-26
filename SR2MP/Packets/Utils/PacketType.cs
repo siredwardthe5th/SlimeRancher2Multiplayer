@@ -60,6 +60,8 @@ public enum PacketType : byte
     PlayerInventory = 55,         // Both Ways                                                                          On Player Inventory Change (local stub)
     ResourceNodeUpdate = 56,      // Both Ways                                                                          On Resource Node Spawn/Despawn (local stub)
     TornadoSpawn = 57,            // Both Ways                                                                          On Tornado Spawn (local stub)
+    FeederSpeed = 58,             // Both Ways                                                                          On Auto-feeder speed change (sync UI setting)
+    SiloContent = 59,             // Both Ways                                                                          On Silo slot content add/remove (sync slot count + type)
     ReservedAck = 254,
     ReservedDoNotUse = 255,
 }

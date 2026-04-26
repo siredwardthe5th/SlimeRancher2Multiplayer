@@ -10,7 +10,7 @@ public static class OnGadgetRemoved
     public static void Prefix(GadgetModel model)
     {
         if (handlingPacket) return;
-        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
+        if (!MultiplayerActive) return;
         if (model == null || model.actorId.Value == 0) return;
         if (!actorManager.Actors.ContainsKey(model.actorId.Value)) return;
 

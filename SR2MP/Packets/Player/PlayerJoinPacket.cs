@@ -8,7 +8,7 @@ public sealed class PlayerJoinPacket : IPacket
     public string? PlayerName { get; set; }
 
     public PacketType Type { get; set; }
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

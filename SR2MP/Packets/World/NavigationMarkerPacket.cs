@@ -9,7 +9,7 @@ public struct NavigationMarkerPacket : IPacket
     public string MapName { get; set; }
 
     public readonly PacketType Type => PacketType.NavigationMarker;
-    public readonly PacketReliability Reliability => PacketReliability.Reliable;
+    public readonly PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public readonly void Serialise(PacketWriter writer)
     {

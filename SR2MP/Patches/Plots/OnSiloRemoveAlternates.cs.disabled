@@ -1,0 +1,145 @@
+using HarmonyLib;
+using Il2CppMonomiPark.SlimeRancher.Player;
+using SR2MP.Shared.Managers;
+
+namespace SR2MP.Patches.Plots;
+
+// SiloStorage.OnIdentifiableRemoved is unpatchable on SR2 1.2.0 / MelonLoader
+// 0.7.2 (first execution after patching hard-crashes). AmmoSlotManager.Decrement
+// also doesn't fire for silo / auto-feeder content removals — discovered in
+// testing, the diag entries never appeared.
+//
+// Try alternate hooks for the silo-content-removal signal:
+//   - AmmoSlot.set_Count: property setter, fires on any direct count change.
+//   - AmmoSlot.Clear: clears the slot to empty.
+//   - AmmoSlot.DecrementAmmo: decrements by 1.
+//   - SiloCatcher.Remove: takes-out method on the silo's catcher.
+//
+// Each is gated diagnostically so we can tell from the log which one fires
+// when the user vacuums food OUT of a feeder. Whichever one fires also
+// triggers the broadcast.
+
+internal static class SiloSlotLookup
+{
+    // For AmmoSlot patches: walk all silos to find the one that owns this slot.
+    public static (SiloStorage silo, int slotIdx)? FindOwningSiloAndSlot(AmmoSlot slot)
+    {
+        if (slot == null) return null;
+        var landPlots = SceneContext.Instance?.GameModel?.landPlots;
+        if (landPlots == null) return null;
+
+        foreach (var entry in landPlots)
+        {
+            var go = entry.value?.gameObj;
+            if (!go) continue;
+            var silo = go.GetComponentInChildren<SiloStorage>();
+            if (!silo) continue;
+
+            var ammo = silo.GetRelevantAmmo();
+            if (ammo == null) continue;
+            var slots = ammo.Slots;
+            if (slots == null) continue;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (slots[i] != null && slots[i].Pointer == slot.Pointer)
+                    return (silo, i);
+            }
+        }
+        return null;
+    }
+}
+
+[HarmonyPatch(typeof(AmmoSlot), "set_Count")]
+internal static class OnAmmoSlotSetCount
+{
+    public static void Postfix(AmmoSlot __instance, int value)
+    {
+        if (handlingPacket) return;
+        if (!MultiplayerActive) return;
+
+        var match = SiloSlotLookup.FindOwningSiloAndSlot(__instance);
+        if (match == null) return;
+
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage($"[SR2MP-Diag-Silo] AmmoSlot.set_Count fired on silo slot — value={value}, broadcasting (immediate)");
+
+        // Use the `value` parameter directly to bypass any uncertainty
+        // about whether the underlying field has been updated yet.
+        SendSlotWithExplicitCount(match.Value.silo, match.Value.slotIdx, value);
+    }
+
+    // Sister of SiloBroadcaster.SendOne that uses an explicit count override
+    // instead of reading via silo.GetSlotCount.
+    private static void SendSlotWithExplicitCount(SiloStorage silo, int slotIdx, int explicitCount)
+    {
+        var loc = silo.GetComponentInParent<LandPlotLocation>();
+        if (loc == null) return;
+
+        var ident = silo.GetSlotIdentifiable(slotIdx);
+        var typeId = ident != null ? NetworkActorManager.GetPersistentID(ident) : -1;
+
+        Main.SendToAllOrServer(new SR2MP.Packets.Landplot.SiloContentPacket
+        {
+            PlotID = loc._id,
+            SlotIndex = slotIdx,
+            ActorTypeId = typeId,
+            Count = explicitCount,
+        });
+    }
+}
+
+[HarmonyPatch(typeof(AmmoSlot), nameof(AmmoSlot.Clear))]
+internal static class OnAmmoSlotClear
+{
+    public static void Postfix(AmmoSlot __instance)
+    {
+        if (handlingPacket) return;
+        if (!MultiplayerActive) return;
+
+        var match = SiloSlotLookup.FindOwningSiloAndSlot(__instance);
+        if (match == null) return;
+
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage("[SR2MP-Diag-Silo] AmmoSlot.Clear fired on silo slot — broadcasting");
+
+        SiloBroadcaster.BroadcastSlot(match.Value.silo, match.Value.slotIdx);
+    }
+}
+
+[HarmonyPatch(typeof(AmmoSlot), nameof(AmmoSlot.DecrementAmmo))]
+internal static class OnAmmoSlotDecrementAmmo
+{
+    public static void Postfix(AmmoSlot __instance)
+    {
+        if (handlingPacket) return;
+        if (!MultiplayerActive) return;
+
+        var match = SiloSlotLookup.FindOwningSiloAndSlot(__instance);
+        if (match == null) return;
+
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage("[SR2MP-Diag-Silo] AmmoSlot.DecrementAmmo fired on silo slot — broadcasting");
+
+        SiloBroadcaster.BroadcastSlot(match.Value.silo, match.Value.slotIdx);
+    }
+}
+
+[HarmonyPatch(typeof(SiloCatcher), nameof(SiloCatcher.Remove))]
+internal static class OnSiloCatcherRemove
+{
+    public static void Postfix(SiloCatcher __instance, bool __result)
+    {
+        if (handlingPacket || !__result) return;
+        if (!MultiplayerActive) return;
+
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage($"[SR2MP-Diag-Silo] SiloCatcher.Remove fired (result={__result})");
+
+        // SiloCatcher is on the same GameObject as the SiloStorage in standard layouts.
+        var silo = __instance.GetComponentInParent<SiloStorage>()
+                   ?? __instance.GetComponentInChildren<SiloStorage>();
+        if (silo == null) return;
+        SiloBroadcaster.BroadcastAllSlots(silo);
+    }
+}

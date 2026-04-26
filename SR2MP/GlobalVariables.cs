@@ -44,6 +44,15 @@ public static class GlobalVariables
                 ? Main.Client.OwnPlayerId
                 : string.Empty;
 
+    // Guard for Harmony patches that must not run before Main has finished
+    // late-init. Some game subsystems (silo prototypes, IL2CPP type
+    // registration) call patched methods before Main.OnLateInitializeMelon
+    // assigns Main.Server / Main.Client, which would NRE on .IsRunning().
+    public static bool MultiplayerActive =>
+        Main.Server != null
+        && Main.Client != null
+        && (Main.Server.IsRunning() || Main.Client.IsConnected);
+
     public static (float Current, float Previous)[]? MarketPricesArray => SceneContext.Instance
         ? Array.ConvertAll<PriceDictionary.Entry, (float Current, float Previous)>(
             SceneContext.Instance.PlortEconomyDirector._currValueMap._entries,

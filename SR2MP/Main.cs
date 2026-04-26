@@ -7,6 +7,7 @@ using SR2MP.Components.FX;
 using SR2MP.Components.Player;
 using SR2MP.Components.Time;
 using SR2MP.Components.UI;
+using SR2MP.Components.World;
 using SR2MP.Packets.Utils;
 using SR2MP.Shared.Managers;
 using SR2MP.Shared.Utils;
@@ -34,6 +35,18 @@ public sealed class Main : SR2EExpansionV3
     // was given `packet.Type` instead of `packet.ActorType` causing it to always be RockPlort (persistent id 25)
     public static bool RockPlortBug => preferences.GetEntry<bool>("the_rock_plorts_are_coming").Value;
 
+    // Toggled at runtime via MelonPreferences. When true, SR2MP emits tagged
+    // [SR2MP-Diag-*] entries to MelonLogger so we can find FX prefab names,
+    // observe feeder/silo/collector/garden lifecycle events, and capture
+    // VacuumInteractionFX activation timing without rebuilding the mod.
+    //
+    // Returns false until OnLateInitializeMelon has assigned `preferences`.
+    // Some game subsystems (e.g. SiloStorage prototype init during IL2CPP
+    // type registration) call patched methods before SR2MP finishes loading;
+    // this guard keeps the diagnostic patches inert during that window.
+    public static bool DiagnosticLogging =>
+        preferences != null && preferences.GetEntry<bool>("diagnostic_logging").Value;
+
     public override void OnLateInitializeMelon()
     {
         InsertLicensesFile();
@@ -52,6 +65,9 @@ public sealed class Main : SR2EExpansionV3
 
         preferences.CreateEntry("the_rock_plorts_are_coming", false,
             display_name: "<color=#ff0000>The rock plorts are coming</color> <alpha=#66>(Rock Plort Mode)");
+
+        preferences.CreateEntry("diagnostic_logging", false,
+            display_name: "Diagnostic Logging (verbose, for debugging)");
 
         Client = new Client.Client();
         Server = new Server.Server();
@@ -89,6 +105,12 @@ public sealed class Main : SR2EExpansionV3
 
                 var ui = new GameObject("SR2MP_UI").AddComponent<MultiplayerUI>();
                 Object.DontDestroyOnLoad(ui.gameObject);
+
+                var siloReconciler = new GameObject("SR2MP_SiloReconciler").AddComponent<SiloReconciler>();
+                Object.DontDestroyOnLoad(siloReconciler.gameObject);
+
+                var feederReconciler = new GameObject("SR2MP_FeederSpeedReconciler").AddComponent<FeederSpeedReconciler>();
+                Object.DontDestroyOnLoad(feederReconciler.gameObject);
 
                 Server.OnServerStarted += () => cheatsEnabled = AllowCheats;
 
@@ -143,6 +165,14 @@ public sealed class Main : SR2EExpansionV3
     {
         actorManager.Initialize(gameContext);
         NetworkSceneManager.Initialize(gameContext);
+
+        // Do NOT try to patch SiloStorage.OnIdentifiableRemoved here. We
+        // tried that — patch install succeeds, but the first execution of
+        // the patched method (whenever a silo loses an item) crashes the
+        // process with no managed exception. Both auto-install and
+        // deferred install have this property. Conclusion: patching this
+        // specific method is incompatible with the current MelonLoader
+        // 0.7.2 / SR2 1.2.0 / Il2CppInterop combination.
 
         // Automatically inserts just by running the constructor.
         //new CustomPauseMenuButton(

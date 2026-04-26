@@ -18,7 +18,7 @@ public static class OnAccessDoorStateChanged
     public static void Postfix(AccessDoor __instance, AccessDoor.State value)
     {
         if (handlingPacket) return;
-        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
+        if (!MultiplayerActive) return;
         if (value != AccessDoor.State.OPEN) return;
 
         var doors = SceneContext.Instance?.GameModel?.doors;

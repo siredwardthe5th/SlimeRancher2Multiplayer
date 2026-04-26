@@ -35,7 +35,7 @@ public sealed class InitialActorsPacket : IPacket
     public List<Actor> Actors { get; set; }
 
     public PacketType Type => PacketType.InitialActors;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

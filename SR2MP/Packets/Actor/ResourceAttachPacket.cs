@@ -13,7 +13,7 @@ public sealed class ResourceAttachPacket : IPacket
     public SpawnResourceModel Model { get; set; }
 
     public PacketType Type => PacketType.ResourceAttach;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

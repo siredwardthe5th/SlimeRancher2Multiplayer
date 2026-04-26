@@ -9,7 +9,7 @@ public sealed class AccessDoorPacket : IPacket
     public AccessDoor.State State { get; set; }
 
     public PacketType Type => PacketType.AccessDoor;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

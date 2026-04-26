@@ -32,7 +32,7 @@ public sealed class PlayerInventoryPacket : IPacket
     public List<SlotData> Slots { get; set; }
 
     public PacketType Type => PacketType.PlayerInventory;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

@@ -10,7 +10,7 @@ public sealed class ForceTimeScale : MonoBehaviour
 
     private void Update()
     {
-        if (!Main.Server.IsRunning() && !Main.Client.IsConnected)
+        if (!MultiplayerActive)
             return;
 
         if (GameContext.Instance.InputDirector._paused.Map.enabled)

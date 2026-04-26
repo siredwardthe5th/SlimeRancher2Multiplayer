@@ -10,7 +10,7 @@ public static class UpgradeLandPlot
     {
         if (handlingPacket) return;
 
-        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
+        if (!MultiplayerActive) return;
 
         if (!__instance)
             return;

@@ -22,7 +22,7 @@ public static class OnActorDestroy
         }
         catch { }
 
-        if ((!Main.Server.IsRunning() && !Main.Client.IsConnected) || handlingPacket || !actorObj)
+        if ((!MultiplayerActive) || handlingPacket || !actorObj)
             return true;
 
         var actor = actorObj.GetComponent<IdentifiableActor>();

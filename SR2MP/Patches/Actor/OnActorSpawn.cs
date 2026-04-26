@@ -20,6 +20,13 @@ namespace SR2MP.Patches.Actor;
 // actor's model is not populated until InitModel runs after Awake.
 //
 // Filtering rules:
+//   - HOST-ONLY: only the host broadcasts new actor spawns. Slime AI runs
+//     on both halves of multiplayer; if both broadcast, the host ends up
+//     with the client's mirror duplicating its own newly-spawned slime.
+//     Restricting broadcast to the host means the host is the canonical
+//     spawn source and clients receive everything from the host.
+//     Trade-off: a client that locally spawns an actor (e.g. via cheat
+//     console) won't sync to the host. Acceptable.
 //   - skip during scene load (covers initial save load)
 //   - skip if NetworkActor is already attached (covers actors added via
 //     OnGameLoadPatch on server start, and actors received from network via
@@ -34,7 +41,8 @@ public static class OnActorSpawn
     public static void Postfix(IdentifiableActor __instance)
     {
         if (handlingPacket) return;
-        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
+        // Host-only — see header comment for why.
+        if (Main.Server == null || !Main.Server.IsRunning()) return;
 
         var sceneLoader = SystemContext.Instance?.SceneLoader;
         if (sceneLoader == null || sceneLoader.IsSceneLoadInProgress) return;
@@ -50,7 +58,7 @@ public static class OnActorSpawn
         yield return null;
 
         if (!actor) yield break;
-        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) yield break;
+        if (Main.Server == null || !Main.Server.IsRunning()) yield break;
         if (actor.GetComponent<NetworkActor>()) yield break;
 
         var actorId = actor.GetActorId();
@@ -67,6 +75,9 @@ public static class OnActorSpawn
 
         var actorType = NetworkActorManager.GetPersistentID(ident.identType);
         var sceneGroupId = NetworkSceneManager.GetPersistentID(model.sceneGroup);
+
+        if (Main.DiagnosticLogging)
+            SrLogger.LogMessage($"[SR2MP-Diag-Spawn] Broadcasting host actor: {ident.identType?.name} id={actorId.Value} type={actorType} pos={actor.transform.position}");
 
         var packet = new ActorSpawnPacket
         {

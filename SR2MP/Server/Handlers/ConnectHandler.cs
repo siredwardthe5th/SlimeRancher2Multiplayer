@@ -8,6 +8,7 @@ using Il2CppMonomiPark.SlimeRancher.Pedia;
 using Il2CppMonomiPark.SlimeRancher.Weather;
 using MelonLoader;
 using SR2MP.Packets.Economy;
+using SR2MP.Packets.Landplot;
 using SR2MP.Packets.Loading;
 using SR2MP.Packets.World;
 using SR2MP.Shared.Managers;
@@ -55,6 +56,8 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         SendMapPacket(clientEp);
         SendAccessDoorsPacket(clientEp);
         SendPricesPacket(clientEp);
+        SendSiloContentsSnapshot(clientEp);
+        SendFeederSpeedsSnapshot(clientEp);
 
         SrLogger.LogMessage($"Player {packet.PlayerId} successfully connected",
             $"Player {packet.PlayerId} successfully connected from {clientEp}");
@@ -277,5 +280,81 @@ public sealed class ConnectHandler : BasePacketHandler<ConnectPacket>
         };
 
         Main.Server.SendToClient(pricesPacket, client);
+    }
+
+    // InitialLandPlotsPacket has a SiloData stub that was never populated
+    // ("// todo" in PlotsLoadHandler). Rather than retrofit serialization
+    // into that schema, we push per-slot SiloContentPackets directly — the
+    // client already has a handler for that type and applies them via
+    // SiloContentApplier, which also seeds the SiloReconciler cache so the
+    // joining client doesn't see the host's state as a "diff" and bounce
+    // it back. Empty slots are skipped (receiver default is empty).
+    private static void SendSiloContentsSnapshot(IPEndPoint client)
+    {
+        var landPlots = SceneContext.Instance?.GameModel?.landPlots;
+        if (landPlots == null) return;
+
+        foreach (var entry in landPlots)
+        {
+            var go = entry.value?.gameObj;
+            if (!go) continue;
+
+            var silo = go.GetComponentInChildren<SiloStorage>();
+            if (!silo) continue;
+
+            var loc = silo.GetComponentInParent<LandPlotLocation>();
+            if (loc == null) continue;
+
+            var ammo = silo.GetRelevantAmmo();
+            if (ammo == null) continue;
+
+            var slots = ammo.Slots;
+            if (slots == null) continue;
+
+            for (int i = 0; i < slots.Length; i++)
+            {
+                var ident = silo.GetSlotIdentifiable(i);
+                var typeId = ident != null ? NetworkActorManager.GetPersistentID(ident) : -1;
+                var count = silo.GetSlotCount(i);
+
+                if (count <= 0 || typeId < 0) continue;
+
+                Main.Server.SendToClient(new SiloContentPacket
+                {
+                    PlotID = loc._id,
+                    SlotIndex = i,
+                    ActorTypeId = typeId,
+                    Count = count,
+                    Sequence = 0,
+                }, client);
+            }
+        }
+    }
+
+    // Auto-feeder speed isn't part of any existing initial-state packet, so
+    // a freshly-joined client sees every feeder at the default speed even if
+    // the host has them dialed up. Push current speed for every feeder on join.
+    private static void SendFeederSpeedsSnapshot(IPEndPoint client)
+    {
+        var landPlots = SceneContext.Instance?.GameModel?.landPlots;
+        if (landPlots == null) return;
+
+        foreach (var entry in landPlots)
+        {
+            var go = entry.value?.gameObj;
+            if (!go) continue;
+
+            var feeder = go.GetComponentInChildren<SlimeFeeder>();
+            if (!feeder) continue;
+
+            var loc = feeder.GetComponentInParent<LandPlotLocation>();
+            if (loc == null) continue;
+
+            Main.Server.SendToClient(new FeederSpeedPacket
+            {
+                PlotID = loc._id,
+                Speed = (byte)feeder.GetFeedingCycleSpeed(),
+            }, client);
+        }
     }
 }

@@ -53,6 +53,14 @@ public sealed partial class MultiplayerUI : MonoBehaviour
             UpdateChatVisibility();
         }
 
+        // Diagnostic: log every MouseDown the MultiplayerUI sees, plus the
+        // current state and whether the menu-blocking guard fires. Lets us
+        // see whether clicks are even reaching the window-draw code.
+        if (Main.DiagnosticLogging && Event.current.type == EventType.MouseDown)
+        {
+            SrLogger.LogMessage($"[SR2MP-Diag-UI] OnGUI MouseDown @ {Event.current.mousePosition} state={state} anyMenuOpen={MenuEUtil.isAnyMenuOpen} multiplayerUIHidden={multiplayerUIHidden}");
+        }
+
         previousLayoutRect = new Rect(6, 16, WindowWidth, 0);
         previousLayoutHorizontalIndex = 0;
 

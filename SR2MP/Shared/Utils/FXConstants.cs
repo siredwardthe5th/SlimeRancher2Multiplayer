@@ -11,8 +11,16 @@ public static class FXConstants
         { PlayerFXType.VacReject, false },
         { PlayerFXType.VacAccept, false },
         { PlayerFXType.VacShoot, false },
+        // Visual-only FX. Without an entry here, PlayerFXPacket.Serialise threw
+        // KeyNotFoundException so the packet never made it onto the wire.
+        { PlayerFXType.WaterSplash, false },
+        { PlayerFXType.WalkTrail, false },
+        { PlayerFXType.VacTrail, false },
 
         { PlayerFXType.VacHold, true },
+        { PlayerFXType.WaterSplashSound, true },
+        { PlayerFXType.VacTrailStart, true },
+        { PlayerFXType.VacTrailEnd, true },
         { PlayerFXType.VacShootEmpty, true },
         { PlayerFXType.VacSlotChange, true },
         { PlayerFXType.VacRunning, true },

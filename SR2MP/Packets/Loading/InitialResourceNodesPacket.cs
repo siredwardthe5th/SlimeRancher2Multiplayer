@@ -28,7 +28,7 @@ public sealed class InitialResourceNodesPacket : IPacket
     public List<NodeEntry> Nodes { get; set; } = new();
 
     public PacketType Type => PacketType.InitialResourceNodes;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
         => writer.WriteList(Nodes, PacketWriterDels.NetObject<NodeEntry>.Func);

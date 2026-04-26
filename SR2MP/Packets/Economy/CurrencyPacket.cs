@@ -9,7 +9,9 @@ public struct CurrencyPacket : IPacket
     public bool ShowUINotification { get; set; }
 
     public readonly PacketType Type => PacketType.CurrencyAdjust;
-    public readonly PacketReliability Reliability => PacketReliability.Reliable;
+    // ReliableOrdered: NewAmount is absolute, so out-of-order delivery
+    // produces "every other sell skipped" visible drift on the receiver.
+    public readonly PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public readonly void Serialise(PacketWriter writer)
     {

@@ -9,7 +9,7 @@ public sealed class WorldSwitchPacket : IPacket
     public bool Immediate { get; set; }
 
     public PacketType Type => PacketType.SwitchActivate;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {

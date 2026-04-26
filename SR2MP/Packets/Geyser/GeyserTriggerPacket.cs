@@ -9,7 +9,7 @@ public sealed class GeyserTriggerPacket : IPacket
     public float Duration { get; set; }
 
     public PacketType Type => PacketType.GeyserTrigger;
-    public PacketReliability Reliability => PacketReliability.Reliable;
+    public PacketReliability Reliability => PacketReliability.ReliableOrdered;
 
     public void Serialise(PacketWriter writer)
     {
