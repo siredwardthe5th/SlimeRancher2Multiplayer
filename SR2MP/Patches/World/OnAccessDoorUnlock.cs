@@ -1,4 +1,8 @@
-﻿using HarmonyLib;
+// Disabled: AccessDoorUIRoot.UnlockDoor was renamed/removed in SR2 1.1.x.
+// Multiplayer access-door unlock sync is non-functional in this build.
+// Re-enable via the official build pipeline targeting the matching SR2 version.
+/*
+using HarmonyLib;
 using Il2CppMonomiPark.SlimeRancher.UI.AccessDoor;
 using Il2CppMonomiPark.World;
 using SR2MP.Packets.World;
@@ -18,3 +22,4 @@ public static class OnAccessDoorUnlock
         Main.SendToAllOrServer(packet);
     }
 }
+*/

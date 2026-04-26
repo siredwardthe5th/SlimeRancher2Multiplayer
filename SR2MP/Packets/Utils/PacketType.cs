@@ -50,6 +50,16 @@ public enum PacketType : byte
     WeatherUpdate = 45,           // Server -> All Clients                                                              On Weather Update
     InitialWeather = 46,          // Server -> Client                                                                   Weather on Load
     LightningStrike = 47,         // Both Ways                                                                          On Lightning Strike
+    DecorizerUpdate = 48,         // Both Ways                                                                          On Decorizer Add/Remove (local stub)
+    GadgetPlace = 49,             // Both Ways                                                                          On Gadget Placed (local stub)
+    GadgetRemove = 50,            // Both Ways                                                                          On Gadget Removed (local stub)
+    InitialDecorizer = 51,        // Server -> Client                                                                   Decorizer state on Load (local stub)
+    InitialGadgets = 52,          // Server -> Client                                                                   Gadgets on Load (local stub)
+    InitialResourceNodes = 53,    // Server -> Client                                                                   Resource Nodes on Load (local stub)
+    NavigationMarker = 54,        // Both Ways                                                                          On Map Marker Set/Cleared (local stub)
+    PlayerInventory = 55,         // Both Ways                                                                          On Player Inventory Change (local stub)
+    ResourceNodeUpdate = 56,      // Both Ways                                                                          On Resource Node Spawn/Despawn (local stub)
+    TornadoSpawn = 57,            // Both Ways                                                                          On Tornado Spawn (local stub)
     ReservedAck = 254,
     ReservedDoNotUse = 255,
 }

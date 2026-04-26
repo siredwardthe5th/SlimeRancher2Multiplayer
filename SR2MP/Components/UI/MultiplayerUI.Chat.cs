@@ -278,7 +278,8 @@ public sealed partial class MultiplayerUI
 
         if (string.IsNullOrEmpty(chatInput) && !isChatFocused)
         {
-            GUIStyle placeholderStyle = new(GUI.skin.textField);
+            // Il2Cpp interop's GUIStyle has no copy ctor; use the parameterless ctor.
+            GUIStyle placeholderStyle = new();
             placeholderStyle.normal.textColor = Color.gray;
 
             GUI.Label(

@@ -12,8 +12,10 @@ public sealed class PlayerInventoryHandler : BaseClientPacketHandler<PlayerInven
 
     protected override void Handle(PlayerInventoryPacket packet)
     {
+        // Stubbed: RemotePlayer has no Inventory field in this source revision.
+        // PacketType.PlayerInventory is registered but not wired to any RemotePlayer state.
         var player = playerManager.GetPlayer(packet.PlayerId);
         if (player == null) return;
-        player.Inventory = packet.Slots.ToArray();
+        _ = packet.Slots;
     }
 }

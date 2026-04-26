@@ -9,6 +9,8 @@ public static class OnActorVacced
 {
     public static void Postfix(Vacuumable __instance)
     {
+        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
+
         var networkActor = __instance.GetComponent<NetworkActor>();
         if (!networkActor)
             return;

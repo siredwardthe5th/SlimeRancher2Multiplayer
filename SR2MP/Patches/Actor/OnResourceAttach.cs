@@ -9,6 +9,7 @@ public static class OnResourceAttach
     public static void Prefix(ResourceCycle __instance, Joint joint)
     {
         if (handlingPacket) return;
+        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
 
         if (joint.connectedBody)
         {
