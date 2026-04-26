@@ -259,6 +259,12 @@ public sealed partial class MultiplayerUI
     {
         if (state == MenuState.DisconnectedMainMenu || chatHidden) return;
 
+        // SR2 1.2.0: GUI.SetNextControlName goes through an Il2CppInterop binding
+        // that depends on Il2CppSystem.ReadOnlySpan`1.GetPinnableReference (missing
+        // in MelonLoader 0.7.2). Calling it throws every OnGUI tick. The chat panel
+        // is multiplayer-only, so skip it entirely outside of an active session.
+        if (!Main.Server.IsRunning() && !Main.Client.IsConnected) return;
+
         float chatY = Screen.height / 2;
 
         GUI.Box(new Rect(6, chatY, ChatWidth, ChatHeight),
@@ -292,13 +298,15 @@ public sealed partial class MultiplayerUI
             );
         }
 
-        chatInput = GUI.TextField(
+        // SR2 1.2.0: GUI.TextField throws unstripping-failed every OnGUI tick.
+        // Use a read-only label until Il2CppInterop ships TextEditor unstripping.
+        // Chat input is therefore non-functional in this build of SR2MP for SR2 1.2.0.
+        chatInput = SafeTextField(
             new Rect(6 + HorizontalSpacing,
                      chatY + ChatHeight - InputHeight - 5,
                      ChatWidth - (HorizontalSpacing * 2),
                      InputHeight),
-            chatInput,
-            MaxChatMessageLength
+            chatInput
         );
 
         UpdateChatFocusState();

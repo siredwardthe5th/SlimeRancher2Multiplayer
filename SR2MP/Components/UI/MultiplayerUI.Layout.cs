@@ -11,6 +11,23 @@ public sealed partial class MultiplayerUI
         GUI.Label(CalculateTextLayout(6, text, horizontalShare, horizontalIndex), text);
     }
 
+    // SR2 1.2.0 / Unity 6 strips UnityEngine.TextEditor.SaveBackup, which
+    // GUI.TextField calls internally. Each TextField invocation throws an
+    // unstripping-failed exception in the IL2CPP-to-managed trampoline -
+    // the call still returns, but the log fills with thousands of these.
+    // Render a read-only Label instead. Editing input values requires
+    // editing the SR2MP MelonPreferences config until Il2CppInterop ships
+    // an unstrip implementation for TextEditor.SaveBackup.
+    private string SafeTextField(Rect rect, string current)
+    {
+        // Il2CppInterop's GUIStyle wrapper has no copy ctor; use parameterless.
+        var style = new GUIStyle();
+        style.alignment = TextAnchor.MiddleLeft;
+        style.normal.textColor = Color.white;
+        GUI.Label(rect, string.IsNullOrEmpty(current) ? " " : current, style);
+        return current;
+    }
+
     private Rect CalculateTextLayout(float originalX, string text, int horizontalShare = 1, int horizontalIndex = 0)
     {
         const float maxWidth = WindowWidth - (HorizontalSpacing * 2);

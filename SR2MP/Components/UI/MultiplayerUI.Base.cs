@@ -13,7 +13,17 @@ public sealed partial class MultiplayerUI : MonoBehaviour
 
     private void Awake()
     {
-        firstTime = Main.SetupUI;
+        // SR2 1.2.0 / Unity 6 strips TextEditor.SaveBackup, which GUI.TextField
+        // depends on. Showing FirstTimeScreen would call GUI.TextField on every
+        // OnGUI tick and spam tens of thousands of unstripping-failed exceptions.
+        // Auto-resolve the first-time setup (username defaults to "Player") so
+        // that screen never appears.
+        if (Main.SetupUI)
+        {
+            Main.SetConfigValue("internal_setup_ui", false);
+        }
+
+        firstTime = false;
         usernameInput = Main.Username;
         allowCheatsInput = Main.AllowCheats;
         ipInput = Main.SavedConnectIP;

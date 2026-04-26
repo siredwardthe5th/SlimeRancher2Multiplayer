@@ -16,7 +16,7 @@ public sealed partial class MultiplayerUI
         DrawText("Please select an username to play multiplayer.");
 
         DrawText("Username:", 2);
-        usernameInput = GUI.TextField(CalculateInputLayout(6, 2, 1), usernameInput);
+        usernameInput = SafeTextField(CalculateInputLayout(6, 2, 1), usernameInput);
 
         if (string.IsNullOrWhiteSpace(usernameInput))
         {
@@ -37,7 +37,7 @@ public sealed partial class MultiplayerUI
         bool validUsername = true;
 
         DrawText("Username:", 2);
-        usernameInput = GUI.TextField(CalculateInputLayout(6, 2, 1), usernameInput);
+        usernameInput = SafeTextField(CalculateInputLayout(6, 2, 1), usernameInput);
 
         DrawText("Allow Cheats:", 2);
         if (GUI.Button(CalculateButtonLayout(6, 2, 1), allowCheatsInput.ToStringYesOrNo()))
@@ -76,10 +76,10 @@ public sealed partial class MultiplayerUI
         DrawText("Join a world:");
 
         DrawText("IP", 2);
-        ipInput = GUI.TextField(CalculateInputLayout(6, 2, 1), ipInput);
+        ipInput = SafeTextField(CalculateInputLayout(6, 2, 1), ipInput);
 
         DrawText("Port", 2);
-        portInput = GUI.TextField(CalculateInputLayout(6, 2, 1), portInput);
+        portInput = SafeTextField(CalculateInputLayout(6, 2, 1), portInput);
 
         var validPort = ushort.TryParse(portInput, out var port);
         if (validPort)
@@ -95,7 +95,7 @@ public sealed partial class MultiplayerUI
         DrawText("Host a world:");
 
         DrawText("Port", 2);
-        hostPortInput = GUI.TextField(CalculateInputLayout(6, 2, 1), hostPortInput);
+        hostPortInput = SafeTextField(CalculateInputLayout(6, 2, 1), hostPortInput);
 
         var validHostPort = ushort.TryParse(hostPortInput, out var hostPort);
         if (validHostPort)
