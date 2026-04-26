@@ -20,20 +20,20 @@
 |     Landplots     |   🟨   |  Gardens (🟧), Silos, Plort collectors & Auto-feeders missing functionality   |
 | Landplot upgrades |   🟩   |                               Fully functional                                |
 |    Slimepedia     |   🟩   |                               Fully functional                                |
-|      Gadgets      |   🟥   |                                Not implemented                                |
+|      Gadgets      |   🟩   |          Place / remove / load (no UI editing of placement remotely)          |
 |     Upgrades      |   🟩   |                               Fully functional                                |
 |       Money       |   🟩   |                               Fully functional                                |
 |       Time        |   🟩   |                               Fully functional                                |
-|    Decorations    |   🟥   |                                Not implemented                                |
+|    Decorations    |   🟩   |                  Decorizer add / remove / initial state load                  |
 |  Gray Labyrinth   |   🟨   |                            Switches are functional                            |
 |   Market Prices   |   🟩   |             Fully functional (Including price change indicators)              |
 |      Plot FX      |   🟩   |                               Fully functional                                |
 |     Market FX     |   🟩   |                               Fully functional                                |
-|  Resource Nodes   |   🟥   |                                Not implemented                                |
+|  Resource Nodes   |   🟩   |                  Spawn / despawn / initial state load                         |
 |   Gordo Slimes    |   🟩   |                               Fully functional                                |
 |      Geysers      |   🟩   |                               Fully functional                                |
 |        Map        |   🟨   |     Lightning has duplicate loot, Tornados and map icons not synchronised     |
-|    Teleporters    |   🟩   |                               Fully functional                                |
+|    Teleporters    |   🟥   |  Not implemented (player position sync makes them appear to work cosmetically) |
 |      Weather      |   🟩   |                               Fully functional                                |
 |     Lightning     |   🟩   |                               Fully functional                                |
 
