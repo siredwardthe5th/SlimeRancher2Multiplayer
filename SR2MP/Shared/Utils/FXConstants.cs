@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 
 namespace SR2MP.Shared.Utils;
 
-public static class FXConstants
+internal static class FXConstants
 {
     #region Player FX
     public static readonly ReadOnlyDictionary<PlayerFXType, bool> IsPlayerSoundDictionary = new(new Dictionary<PlayerFXType, bool>
@@ -11,22 +11,14 @@ public static class FXConstants
         { PlayerFXType.VacReject, false },
         { PlayerFXType.VacAccept, false },
         { PlayerFXType.VacShoot, false },
-        // Visual-only FX. Without an entry here, PlayerFXPacket.Serialise threw
-        // KeyNotFoundException so the packet never made it onto the wire.
-        { PlayerFXType.WaterSplash, false },
-        { PlayerFXType.WalkTrail, false },
-        { PlayerFXType.VacTrail, false },
 
         { PlayerFXType.VacHold, true },
-        { PlayerFXType.WaterSplashSound, true },
-        { PlayerFXType.VacTrailStart, true },
-        { PlayerFXType.VacTrailEnd, true },
         { PlayerFXType.VacShootEmpty, true },
         { PlayerFXType.VacSlotChange, true },
         { PlayerFXType.VacRunning, true },
         { PlayerFXType.VacRunningStart, true },
         { PlayerFXType.VacRunningEnd, true },
-        { PlayerFXType.VacShootSound, true },
+        { PlayerFXType.VacShootSound, true }
     });
     public static readonly ReadOnlyDictionary<PlayerFXType, bool> DoesPlayerSoundLoopDictionary = new(new Dictionary<PlayerFXType, bool>
     {
@@ -37,7 +29,7 @@ public static class FXConstants
         { PlayerFXType.VacRunningEnd, false },
         { PlayerFXType.VacShootSound, false },
 
-        { PlayerFXType.VacRunning, true },
+        { PlayerFXType.VacRunning, true }
     });
     public static readonly ReadOnlyDictionary<PlayerFXType, float> PlayerSoundVolumeDictionary = new(new Dictionary<PlayerFXType, float>
     {
@@ -47,7 +39,7 @@ public static class FXConstants
         { PlayerFXType.VacRunningStart, 0.7f },
         { PlayerFXType.VacRunningEnd, 0.7f },
         { PlayerFXType.VacShootSound, 0.8f },
-        { PlayerFXType.VacHold, 0.65f },
+        { PlayerFXType.VacHold, 0.65f }
     });
     public static readonly ReadOnlyDictionary<PlayerFXType, bool> ShouldPlayerSoundBeTransientDictionary = new(new Dictionary<PlayerFXType, bool>
     {
@@ -58,7 +50,7 @@ public static class FXConstants
         { PlayerFXType.VacHold, true },
         { PlayerFXType.VacShootEmpty, true },
         { PlayerFXType.VacSlotChange, true },
-        { PlayerFXType.VacShootSound, true },
+        { PlayerFXType.VacShootSound, true }
     });
 
     #endregion
@@ -75,7 +67,7 @@ public static class FXConstants
         { WorldFXType.UpgradePlot, true },
         { WorldFXType.SellPlortSound, true },
         { WorldFXType.SellPlortDroneSound, true },
-        { WorldFXType.GordoFoodEatenSound, true },
+        { WorldFXType.GordoFoodEatenSound, true }
     });
     public static readonly ReadOnlyDictionary<WorldFXType, bool> DoesWorldSoundLoopDictionary = new(new Dictionary<WorldFXType, bool>
     {
@@ -83,7 +75,7 @@ public static class FXConstants
         { WorldFXType.UpgradePlot, false },
         { WorldFXType.SellPlortSound, false },
         { WorldFXType.SellPlortDroneSound, false },
-        { WorldFXType.GordoFoodEatenSound, false },
+        { WorldFXType.GordoFoodEatenSound, false }
     });
     public static readonly ReadOnlyDictionary<WorldFXType, float> WorldSoundVolumeDictionary = new(new Dictionary<WorldFXType, float>
     {
@@ -91,7 +83,7 @@ public static class FXConstants
         { WorldFXType.UpgradePlot, 0.5f },
         { WorldFXType.SellPlortSound, 0.8f },
         { WorldFXType.SellPlortDroneSound, 1f },
-        { WorldFXType.GordoFoodEatenSound, 1f },
+        { WorldFXType.GordoFoodEatenSound, 1f }
     });
     public static readonly ReadOnlyDictionary<WorldFXType, bool> ShouldWorldSoundBeTransientDictionary = new(new Dictionary<WorldFXType, bool>
     {
@@ -99,7 +91,7 @@ public static class FXConstants
         { WorldFXType.UpgradePlot, true },
         { WorldFXType.SellPlortSound, true },
         { WorldFXType.SellPlortDroneSound, true },
-        { WorldFXType.GordoFoodEatenSound, true },
+        { WorldFXType.GordoFoodEatenSound, true }
     });
 
     #endregion

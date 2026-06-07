@@ -1,6 +1,6 @@
 namespace SR2MP.Components.UI;
 
-public sealed partial class MultiplayerUI
+internal sealed partial class MultiplayerUI
 {
     private Rect previousLayoutRect;
     private Rect previousLayoutChatRect;
@@ -10,82 +10,114 @@ public sealed partial class MultiplayerUI
     {
         GUI.Label(CalculateTextLayout(6, text, horizontalShare, horizontalIndex), text);
     }
+    
+    private string activeInputId = string.Empty;
+    private bool justUnfocusedInput;
+    private bool suppressNextChar;
 
-    // SR2 1.2.0 / Unity 6 strips UnityEngine.TextEditor.SaveBackup, which
-    // GUI.TextField calls internally. We can't use GUI.TextField on this
-    // build, so we drive input ourselves: render with GUI.Label (which is
-    // safe — it's a no-op on non-Repaint event types internally) and read
-    // Event.current to capture keystrokes. Bypasses TextEditor entirely.
-    //
-    // Critical IMGUI rule: every control must be invoked unconditionally on
-    // EVERY event type (Layout / MouseDown / Repaint / KeyDown / ...) so
-    // that internal control IDs stay in sync across passes. Earlier we
-    // wrapped the render in `if (ev.type == EventType.Repaint)`, which
-    // caused control IDs of subsequent buttons to drift between passes —
-    // buttons stopped firing because IMGUI's MouseDown pass thought the
-    // button was at a different ID than the Layout pass.
-    //
-    // Focus model: a single static `_focusedField` holds the controlName of
-    // the currently-active field. Click any SafeTextField rect to focus it;
-    // click outside (or hit Enter / Escape / Tab) to defocus.
-    private static string? _focusedField;
-    private static GUIStyle? _safeTextStyle;
-
-    private string SafeTextField(Rect rect, string current, string controlName)
+    private string DrawSafeTextInput(string id, Rect rect, string value, int maxLength = 64, bool numbersOnly = false, bool isChat = false)
     {
-        current ??= string.Empty;
-        bool isFocused = _focusedField == controlName;
-        var ev = Event.current;
+        var current = Event.current;
+        var displayValue = string.IsNullOrEmpty(value) && activeInputId != id
+            ? (isChat ? "Enter to Chat" : "Click to Type")
+            : value;
 
-        // Plain GUI.Label, no custom style — minimum chance of upsetting
-        // IMGUI's internal state.
-        var caret = isFocused && ((int)(UnityEngine.Time.unscaledTime * 2) % 2 == 0) ? "|" : string.Empty;
-        GUI.Label(rect, current + caret);
+        if (activeInputId == id)
+            GUI.skin.box.normal.textColor = new Color32(255, 255, 185, 255);
 
-        if (ev.type == EventType.MouseDown)
+        GUI.Box(rect, displayValue);
+
+        GUI.skin.box.normal.textColor = Color.white;
+
+        if (current.type == EventType.MouseDown)
         {
-            var hitMe = rect.Contains(ev.mousePosition);
-            // Diagnostic — gated on flag, to be removed once button issue is solved
-            if (Main.DiagnosticLogging)
-                SrLogger.LogMessage($"[SR2MP-Diag-UI] MouseDown @ {ev.mousePosition} | field='{controlName}' rect={rect} hitMe={hitMe} wasFocused={isFocused}");
-            if (hitMe)
+            if (rect.Contains(current.mousePosition))
             {
-                _focusedField = controlName;
-                ev.Use();
+                activeInputId = id;
+                suppressNextChar = true;
+                current.Use();
             }
-            else if (isFocused)
+            else if (activeInputId == id)
             {
-                _focusedField = null;
+                activeInputId = string.Empty;
             }
         }
 
-        if (isFocused && ev.type == EventType.KeyDown)
+        if (activeInputId != id)
+            return value;
+
+        if (current.type == EventType.KeyDown)
         {
-            switch (ev.keyCode)
+            switch (current.keyCode)
             {
                 case KeyCode.Backspace:
-                    if (current.Length > 0) current = current.Substring(0, current.Length - 1);
-                    ev.Use();
-                    break;
+                    if (!string.IsNullOrEmpty(value))
+                        value = value[..^1];
+                    current.Use();
+                    return value;
+                
                 case KeyCode.Return:
                 case KeyCode.KeypadEnter:
-                case KeyCode.Escape:
-                case KeyCode.Tab:
-                    _focusedField = null;
-                    ev.Use();
-                    break;
-                default:
-                    var ch = ev.character;
-                    if (ch >= 32 && ch != 127)
+                    if (!isChat)
                     {
-                        current += ch;
-                        ev.Use();
+                        activeInputId = string.Empty;
+                        justUnfocusedInput = true;
+                        current.Use();
                     }
+                    return value;
+
+                case KeyCode.Escape:
+                    activeInputId = string.Empty;
+                    current.Use();
+                    return value;
+
+                case KeyCode.X:
+                    if (current.control)
+                    {
+                        GUIUtility.systemCopyBuffer = value;
+                        return "";
+                    }
+
+                    break;
+
+                case KeyCode.V:
+                    if (current.control)
+                    {
+                        value += GUIUtility.systemCopyBuffer;
+                        return value;
+                    }
+
+                    break;
+
+                case KeyCode.C:
+                    if (current.control)
+                    {
+                        GUIUtility.systemCopyBuffer = value;
+                        return value;
+                    }
+
                     break;
             }
+
+            if (suppressNextChar)
+            {
+                suppressNextChar = false;
+                current.Use();
+                return value;
+            }
+
+            if (current.character == '\0' || char.IsControl(current.character))
+                return value;
+
+            if ((!numbersOnly || char.IsDigit(current.character)) && value.Length < maxLength)
+            {
+                value += current.character;
+            }
+
+            current.Use();
         }
 
-        return current;
+        return value;
     }
 
     private Rect CalculateTextLayout(float originalX, string text, int horizontalShare = 1, int horizontalIndex = 0)
@@ -94,10 +126,10 @@ public sealed partial class MultiplayerUI
         var style = GUI.skin.label;
         var height = style.CalcHeight(new GUIContent(text), maxWidth / horizontalShare);
 
-        float x = originalX + HorizontalSpacing;
-        float y = previousLayoutRect.y;
-        float w = maxWidth / horizontalShare;
-        float h = height;
+        var x = originalX + HorizontalSpacing;
+        var y = previousLayoutRect.y;
+        var w = maxWidth / horizontalShare;
+        var h = height;
 
         x += horizontalIndex * w;
 
@@ -116,9 +148,9 @@ public sealed partial class MultiplayerUI
     {
         const float maxWidth = WindowWidth - (HorizontalSpacing * 2);
 
-        float x = originalX + HorizontalSpacing;
-        float y = previousLayoutRect.y;
-        float w = maxWidth / horizontalShare;
+        var x = originalX + HorizontalSpacing;
+        var y = previousLayoutRect.y;
+        var w = maxWidth / horizontalShare;
         const float h = InputHeight;
 
         x += horizontalIndex * w;
@@ -138,9 +170,9 @@ public sealed partial class MultiplayerUI
     {
         const float maxWidth = WindowWidth - (HorizontalSpacing * 2);
 
-        float x = originalX + HorizontalSpacing;
-        float y = previousLayoutRect.y;
-        float w = maxWidth / horizontalShare;
+        var x = originalX + HorizontalSpacing;
+        var y = previousLayoutRect.y;
+        var w = maxWidth / horizontalShare;
         const float h = ButtonHeight;
 
         x += horizontalIndex * w;
@@ -154,5 +186,12 @@ public sealed partial class MultiplayerUI
         previousLayoutRect = result;
 
         return result;
+    }
+
+    private void DrawTabRow(ref byte selected, params string[] labels)
+    {
+        for (byte i = 0; i < labels.Length; i++)
+            if (GUI.Toggle(CalculateButtonLayout(6, labels.Length, i), selected == i, labels[i], GUI.skin.button))
+                selected = i;
     }
 }

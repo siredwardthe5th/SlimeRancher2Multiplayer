@@ -1,94 +1,114 @@
 using System.Collections;
 using HarmonyLib;
-using MelonLoader;
+using Il2CppMonomiPark.SlimeRancher.DataModel;
+using Il2CppMonomiPark.SlimeRancher.Player;
+using Il2CppMonomiPark.SlimeRancher.SceneManagement;
+using Il2CppMonomiPark.SlimeRancher.VFX;
 using SR2MP.Components.Actor;
 using SR2MP.Packets.Actor;
 using SR2MP.Shared.Managers;
+using Unity.Mathematics;
 
 namespace SR2MP.Patches.Actor;
 
-// Originally patched InstantiationHelpers.InstantiateActor. In SR2 1.2.0 that
-// method gained a Nullable<MonomiPark.SlimeRancher.Player.AmmoSlot.AmmoMetadata>
-// parameter, which MelonLoader 0.7.2's Il2CppInterop cannot marshal — every
-// actor spawn threw NullReferenceException in the il2cpp->managed trampoline,
-// leaving newly-spawned actors partially initialized (e.g. SlimeEat.MaybeChomp
-// returned False on every chomp attempt for new slimes).
-//
-// Retargeted to IdentifiableActor.Awake, which fires once per actor as the
-// MonoBehaviour wakes up. Awake itself takes no parameters, so there is nothing
-// to marshal. We defer the actual broadcast to the next frame because the
-// actor's model is not populated until InitModel runs after Awake.
-//
-// Filtering rules:
-//   - HOST-ONLY: only the host broadcasts new actor spawns. Slime AI runs
-//     on both halves of multiplayer; if both broadcast, the host ends up
-//     with the client's mirror duplicating its own newly-spawned slime.
-//     Restricting broadcast to the host means the host is the canonical
-//     spawn source and clients receive everything from the host.
-//     Trade-off: a client that locally spawns an actor (e.g. via cheat
-//     console) won't sync to the host. Acceptable.
-//   - skip during scene load (covers initial save load)
-//   - skip if NetworkActor is already attached (covers actors added via
-//     OnGameLoadPatch on server start, and actors received from network via
-//     NetworkActorManager.TrySpawnNetworkActor / ZoneLoadingLoop)
-//   - skip if the actor's id is already in actorManager.Actors (defense in
-//     depth against double-broadcasting)
-//   - the existing handlingPacket guard suppresses re-broadcast when the
-//     actor was instantiated as a result of an incoming packet
-[HarmonyPatch(typeof(IdentifiableActor), nameof(IdentifiableActor.Awake))]
-public static class OnActorSpawn
+[HarmonyPatch(typeof(InstantiationHelpers), nameof(InstantiationHelpers.InstantiateActor))]
+internal static class OnActorSpawn
 {
-    public static void Postfix(IdentifiableActor __instance)
+    private static IEnumerator SpawnOverNetwork(
+        int actorType,
+        byte sceneGroup,
+        GameObject actor,
+        SlimeAppearance.AppearanceSaveSet appearance,
+        SlimeAppearance.AppearanceSaveSet secondAppearance)
     {
-        if (handlingPacket) return;
-        // Host-only — see header comment for why.
-        if (Main.Server == null || !Main.Server.IsRunning()) return;
-
-        var sceneLoader = SystemContext.Instance?.SceneLoader;
-        if (sceneLoader == null || sceneLoader.IsSceneLoadInProgress) return;
-
-        if (__instance.GetComponent<NetworkActor>()) return;
-
-        MelonCoroutines.Start(BroadcastActor(__instance));
-    }
-
-    private static IEnumerator BroadcastActor(IdentifiableActor actor)
-    {
-        // Wait for InitModel to populate _model with id / sceneGroup / etc.
         yield return null;
 
-        if (!actor) yield break;
-        if (Main.Server == null || !Main.Server.IsRunning()) yield break;
-        if (actor.GetComponent<NetworkActor>()) yield break;
+        if (!actor)
+            yield break;
 
-        var actorId = actor.GetActorId();
-        if (actorId.Value == 0) yield break;
-        if (actorManager.Actors.ContainsKey(actorId.Value)) yield break;
+        var id = actor.GetComponent<IdentifiableActor>().GetActorId();
 
-        var ident = actor.GetComponent<Identifiable>();
-        if (!ident) yield break;
+        var emotions = float4.zero;
+        var sleeping = false;
+        var slimeModel = actor.GetComponent<IdentifiableActor>()._model.TryCast<SlimeModel>();
+        if (slimeModel != null)
+        {
+            emotions = slimeModel.Emotions;
+            sleeping = slimeModel.isSleeping;
+        }
 
-        var model = actor._model;
-        if (model == null) yield break;
+        var radiancy = ActorAppearanceType.Default;
+        var slimeAppearanceApplicator = actor.GetComponent<SlimeAppearanceApplicator>();
+        if (slimeAppearanceApplicator != null)
+        {
+            var currentAppearance = slimeAppearanceApplicator.Appearance;
+            var def = actor.GetComponent<Identifiable>().identType.TryCast<SlimeDefinition>();
+            if (def != null && currentAppearance != null)
+            {
+                if (currentAppearance == def.RadiantBase)
+                    radiancy = ActorAppearanceType.BaseRadiant;
+                else if (currentAppearance == def.RadiantLargo0)
+                    radiancy = ActorAppearanceType.LargoRadiant0;
+                else if (currentAppearance == def.RadiantLargo1)
+                    radiancy = ActorAppearanceType.LargoRadiant1;
+            }
+        }
 
-        actor.gameObject.AddComponent<NetworkActor>().LocallyOwned = true;
+        var material = SprinkleMaterialType.none;
+        var sprinkle = actor.GetComponent<RandomMaterial>();
 
-        var actorType = NetworkActorManager.GetPersistentID(ident.identType);
-        var sceneGroupId = NetworkSceneManager.GetPersistentID(model.sceneGroup);
+        if (sprinkle != null)
+        {
+            var materialName = sprinkle._renderers
+                .Select(r => r.sharedMaterial?.name.Replace(" (Instance)", ""))
+                .FirstOrDefault();
 
-        if (Main.DiagnosticLogging)
-            SrLogger.LogMessage($"[SR2MP-Diag-Spawn] Broadcasting host actor: {ident.identType?.name} id={actorId.Value} type={actorType} pos={actor.transform.position}");
+            if (Enum.TryParse(materialName, out SprinkleMaterialType type))
+                material = type;
+        }
 
         var packet = new ActorSpawnPacket
         {
             ActorType = actorType,
-            SceneGroup = (byte)sceneGroupId,
-            ActorId = actorId,
+            SceneGroup = sceneGroup,
+            ActorId = id,
             Position = actor.transform.position,
             Rotation = actor.transform.rotation,
+            Emotions = emotions,
+            Sleeping = sleeping,
+            FirstAppearance = appearance,
+            SecondAppearance = secondAppearance,
+            Radiancy = (byte)radiancy,
+            MaterialIndex = (byte)material
         };
 
         Main.SendToAllOrServer(packet);
-        actorManager.Actors[actorId.Value] = model;
+    }
+
+    public static void Postfix(
+        GameObject __result,
+        GameObject original,
+        SceneGroup sceneGroup,
+        Vector3 position,
+        Quaternion rotation,
+        bool nonActorOk = false,
+        SlimeAppearance.AppearanceSaveSet appearance = SlimeAppearance.AppearanceSaveSet.NONE,
+        SlimeAppearance.AppearanceSaveSet secondAppearance = SlimeAppearance.AppearanceSaveSet.NONE,
+        Il2CppSystem.Nullable<AmmoSlot.AmmoMetadata> metadata = null!,
+        bool ignoreEmotions = false,
+        bool setCollected = false)
+    {
+        if (HandlingPacket) return;
+
+        var networkActor = __result.AddComponent<NetworkActor>();
+        networkActor.LocallyOwned = true;
+
+        var actorType = NetworkActorManager.GetPersistentID(original.GetComponent<Identifiable>().identType);
+        var sceneGroupId = NetworkSceneManager.GetPersistentID(sceneGroup);
+
+        ActorManager.Actors[__result.GetComponent<IdentifiableActor>()._model.actorId.Value] =
+            __result.GetComponent<IdentifiableActor>()._model;
+
+        StartCoroutine(SpawnOverNetwork(actorType, (byte)sceneGroupId, __result, appearance, secondAppearance));
     }
 }

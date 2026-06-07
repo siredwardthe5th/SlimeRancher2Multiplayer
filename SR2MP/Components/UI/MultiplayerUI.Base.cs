@@ -1,38 +1,29 @@
 using MelonLoader;
-using SR2E.Utils;
+using Starlight.Storage;
+using Starlight.Utils;
 
 namespace SR2MP.Components.UI;
 
-// TODO: Asset bundle
-[RegisterTypeInIl2Cpp(false)]
-public sealed partial class MultiplayerUI : MonoBehaviour
+// todo: Asset bundle
+[InjectIntoIL]
+internal sealed partial class MultiplayerUI : MonoBehaviour
 {
     public static MultiplayerUI Instance { get; private set; }
 
-    private bool didUnfocus = false;
+    private bool didUnfocus;
 
     private void Awake()
     {
-        // SR2 1.2.0 / Unity 6 strips TextEditor.SaveBackup, which GUI.TextField
-        // depends on. Showing FirstTimeScreen would call GUI.TextField on every
-        // OnGUI tick and spam tens of thousands of unstripping-failed exceptions.
-        // Auto-resolve the first-time setup (username defaults to "Player") so
-        // that screen never appears.
-        if (Main.SetupUI)
-        {
-            Main.SetConfigValue("internal_setup_ui", false);
-        }
-
-        firstTime = false;
+        firstTime = Main.SetupUI;
         usernameInput = Main.Username;
         allowCheatsInput = Main.AllowCheats;
-        ipInput = Main.SavedConnectIP;
-        portInput = Main.SavedConnectPort;
-        hostPortInput = Main.SavedHostPort;
+        joinIpInput = Main.SavedConnectIP;
+        joinPortInput = Main.SavedConnectPort;
+        hostLocalPortInput = Main.SavedHostPort;
 
         if (Instance)
         {
-            SrLogger.LogError("Tried to create instance of MultiplayerUI, but it already exists!", SrLogTarget.Both);
+            SrLogger.LogError("Tried to create instance of MultiplayerUI, but it already exists!");
             Destroy(this);
             return;
         }
@@ -45,26 +36,27 @@ public sealed partial class MultiplayerUI : MonoBehaviour
         Instance = null!;
     }
 
+    private void Update()
+    {
+        HandleUIToggle();
+        HandleChatToggle();
+        HandleChatInput();
+    }
+
     private void OnGUI()
     {
+        GUI.skin.label.richText = true;
+
         if (Event.current.type == EventType.Layout)
         {
             state = GetState();
             UpdateChatVisibility();
         }
 
-        // Diagnostic: log every MouseDown the MultiplayerUI sees, plus the
-        // current state and whether the menu-blocking guard fires. Lets us
-        // see whether clicks are even reaching the window-draw code.
-        if (Main.DiagnosticLogging && Event.current.type == EventType.MouseDown)
-        {
-            SrLogger.LogMessage($"[SR2MP-Diag-UI] OnGUI MouseDown @ {Event.current.mousePosition} state={state} anyMenuOpen={MenuEUtil.isAnyMenuOpen} multiplayerUIHidden={multiplayerUIHidden}");
-        }
-
         previousLayoutRect = new Rect(6, 16, WindowWidth, 0);
         previousLayoutHorizontalIndex = 0;
 
-        if (!MenuEUtil.isAnyMenuOpen)
+        if (!MenuEUtil.isAnyMenuOpen && !MenuEUtil.isAnyPopUpOpen)
         {
             didUnfocus = false;
             DrawWindow();
@@ -72,7 +64,6 @@ public sealed partial class MultiplayerUI : MonoBehaviour
         }
         else if (!didUnfocus)
         {
-            shouldUnfocusChat = true;
             UnfocusChat();
             didUnfocus = true;
         }
