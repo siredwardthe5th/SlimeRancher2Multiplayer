@@ -10,7 +10,22 @@ namespace SR2MP.Patches.Map;
 [HarmonyPatch(typeof(MapUI), nameof(MapUI.Start))]
 internal class OnMapUIAppear
 {
+    [HarmonyPriority(Priority.First)]
     public static void Postfix(MapUI __instance)
+    {
+        // Run before other MapUI.Start postfixes (e.g. Starlight's map-cheat patch, which can
+        // throw and abort the postfix chain before our player markers are built).
+        try
+        {
+            BuildMarkers(__instance);
+        }
+        catch (Exception ex)
+        {
+            SrLogger.LogError($"OnMapUIAppear failed to build player markers: {ex}");
+        }
+    }
+
+    private static void BuildMarkers(MapUI __instance)
     {
         foreach (var player in PlayerManager.GetAllPlayers())
         {

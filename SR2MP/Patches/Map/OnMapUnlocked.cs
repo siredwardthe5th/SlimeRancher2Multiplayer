@@ -11,8 +11,7 @@ internal static class OnMapUnlocked
     {
         var packet = new MapUnlockPacket
         {
-            // NodeID = __instance._fogRevealEvent._dataKey,
-            NodeID =__instance._fogRevealEvent.DataKey
+            NodeID = __instance._fogRevealEvent._dataKey
         };
 
         Main.SendToAllOrServer(packet);
